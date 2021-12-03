@@ -1,0 +1,267 @@
+## let's try out some of the labs from the Wikle cressie book
+
+## we'll run through their code mostly as is, though I may
+## use pandas instead of R for the data-wrangling, then 
+## follow up with R packages
+
+## then we back up and try to repeat the graphics with d3JS. 
+
+## the js stuff we'll try to use observables.
+
+## that may be too excruciatingly slow, but let's see. 
+
+## the book has some custom packages:
+
+## the "book" package:
+library(devtools)
+install_github("andrewzm/STRbook")
+
+## there is also a deprecated package, spatiotemporal
+## looks like they failed to keep things up to spec for 
+## cran. 
+
+## download the archived version, and install it 
+
+df="/home/daniel/Downloads/SpatioTemporal_1.1.7.tar.gz"
+sudo R CMD INSTALL --build $df 
+
+## now can we do our homework?
+
+## to get the data in R:
+
+library('dplyr') 
+library('tidyr') 
+library('STRbook')
+
+system.file("extdata", "Stationinfo.dat", package="STRbook")
+
+locs <- read.table(system.file("extdata", "Stationinfo.dat", package="STRbook"), 
+                    col.names = c("id", "lat", "lon"))
+
+times <- read.table(system.file("extdata", "Times_1990.dat", package="STRbook"), 
+                    col.names = c("julian", "year", "month", "day"))
+
+tmax <- read.table(system.file("extdata", "Tmax_1990.dat", package="STRbook"))
+                    
+names(times)
+
+colnames(times)
+
+names(tmax) <- locs$id
+
+tmax <- cbind(times, tmax)
+
+tmax_long <- 
+
+## um...they are losing me here. 
+## oh god. This is a mess. R sucks for
+## cleaning up data. Tomorrow, let's do this python.
+
+###############
+
+## okay...let's do data wrangling our way. with pandas. 
+
+## the goal here is to get the standard R packages for
+## space time data the format they need, from the 
+## raw data given by the book. Working backward, we need the 
+## following packages in R:
+
+library(sp)
+library('spacetime')
+
+## we have two types of dataframe here, and STIDF, 
+## a space-time "irregular" df, and a STFDF, =
+## space time "full" df
+
+## the STI, we use the NOAA data. 
+
+## STIDF needs a sp object, a date tag for each row of the sp object, 
+## for example, from the docs:
+
+library(sp)
+
+sp = cbind(x = c(0,0,1), y = c(0,1,1))
+row.names(sp) = paste("point", 1:nrow(sp), sep="")
+sp = SpatialPoints(sp)
+
+time = as.POSIXct("2010-08-05")+3600*(10:13)
+m = c(10,20,30) # means for each of the 3 point locations
+mydata = rnorm(length(sp)*length(time),mean=rep(m, 4))
+IDs = paste("ID",1:length(mydata))
+
+mydata = data.frame(values = signif(mydata,3), ID=IDs)
+
+stidf = as(STFDF(sp, time, mydata), "STIDF")
+
+## does this also work?
+
+stidf2 = STIDF(sp=sp, 
+                time=time, 
+                data=mydata)
+## no, figure out why later...
+
+stidf[1:2,]
+
+all.equal(stidf, stidf[stidf,]) ## why this?
+
+## any way, an stidf is a multi-dimensional object,
+## with base dimensions of number of spatial points
+## by number of time points, and a data matrix with as many rows 
+## as this spatial sites x time matrix (so 3 sites, 4 time points
+## equals a data matrix with 12 rows, and as many columns as
+## we have data for). Makes sense. So for the example data 
+## in the book, the real chore is figuring out all the data 
+## they want to include:
+
+## finding these in R goes like this:
+## locs 
+system.file("extdata", "Stationinfo.dat", package="STRbook") 
+## times
+system.file("extdata", "Times_1990.dat", package="STRbook")
+## tmax
+system.file("extdata", "Tmax_1990.dat", package="STRbook")
+## tmin
+## TDP (dewpoint temp)
+## precip
+## any they are all in:
+
+"/usr/local/lib/R/site-library/STRbook/extdata/"
+
+## switch over to python, play with them there
+
+import os
+import numpy as np
+import pandas as pd
+import datetime
+
+
+## so we want to make a dataframe for our spatial data, assume two colums:
+
+ddir = "/usr/local/lib/R/site-library/STRbook/extdata/"
+
+os.listdir(ddir)
+
+stationInfo = (pd.read_csv(ddir+'Stationinfo.dat', header=None)
+                .iloc[:,0]
+                .str.split(expand=True)
+                .astype('float')
+                )
+
+stationInfo.columns=['id','lat','long']
+stationInfo['id'] = stationInfo['id'].astype('int')
+
+stationInfo ## that is the physical site data
+
+## temp data
+
+## so now temp data?
+times = (pd.read_csv(ddir+'Times_1990.dat', header=None)
+                .iloc[:,0]
+                .str.split(expand=True)
+    )
+times.columns = ['julian','year', 'month', 'day']
+
+## this could be useful later
+pd.to_datetime(times[['year', 'month', 'day']])
+
+## weather data is in a couple different tables:
+
+## temp max
+tmax = (pd.read_csv(ddir+'Tmax_1990.dat', header=None)
+                .iloc[:,0]
+                .str.split(expand=True)
+                .astype('int32')
+    )
+tmax.columns = stationInfo['id']
+
+
+
+## temp min
+tmin = (pd.read_csv(ddir+'Tmin_1990.dat', header=None)
+                .iloc[:,0]
+                .str.split(expand=True)
+                .astype('int32')
+    )
+tmin.columns = stationInfo['id']
+
+## temp dewpoint
+tdp = (pd.read_csv(ddir+'TDP_1990.dat', header=None)
+                .iloc[:,0]
+                .str.split(expand=True)
+                .astype('float')
+    )
+tdp.columns = stationInfo['id']
+
+## precip
+
+precip = (pd.read_csv(ddir+'Precip_1990.dat', header=None)
+                .iloc[:,0]
+                .str.split(expand=True)
+                .astype('float')
+    )
+precip.columns = stationInfo['id']
+
+tmax.iloc[0:3,0:3]
+
+tdp.iloc[0:3,0:3]
+
+tmax.iloc[0:3,0:4]
+
+precip.iloc[0:3,0:4]
+
+stationInfo
+
+stationInfo.shape
+
+stationInfo.iloc[0:3,0:4]
+
+times.iloc[0:3,:]
+
+times.shape
+
+tmax.shape
+
+stationInfo.shape
+
+## now we want all of these in long format, with timestamp and station id
+
+dfi = precip
+mmv = -99.989998
+proc = 'precip'
+aa = pd.concat([times,dfi], axis=1)
+## melt
+bb = pd.melt(aa, id_vars=['julian','year','month','day'],
+    var_name='id', value_name='z')
+## get rid of missing observations:
+mask = bb.z <= mmv
+cc = bb[~mask]
+## add a column indicating the kind of data this is
+cc['proc'] = proc
+
+def makeLong(dfi, mmv, proc):
+    aa = pd.concat([times,dfi], axis=1)
+    bb = pd.melt(aa, id_vars=['julian','year','month','day'],
+        var_name='id', value_name='z')
+    mask = bb.z <= mmv
+    cc = bb[~mask]
+    cc['proc'] = proc
+    return(cc)
+
+dd = makeLong(precip, -99.989998, 'precip')
+
+dd.equals(cc)
+
+tdp.head()
+
+## seems to work. Try on our other dfs?
+## these are the various weather data
+
+tmax_l = makeLong(tmax, -998, 'tmax')
+tdp_l = makeLong(tdp, -999.90001, 'tdp')
+tmin_l = makeLong(tmin, -9999, 'tmin')
+precip_l = makeLong(precip, -99.989998, 'precip')
+
+## seems to work. Author says to put them 
+## all together:
+aa = pd.concat([tmax_l, tdp_l, tmin_l, precip_l])
+
