@@ -10,6 +10,15 @@
 
 ## that may be too excruciatingly slow, but let's see. 
 
+## start a repo so we which computers...
+
+
+git remote add origin https://github.com/danchurch/bayesSpatioTemp.git
+git branch -M main
+git remote set-url origin git@github.com:danchurch/bayesSpatioTemp.git
+
+git push -u origin main
+
 ## the book has some custom packages:
 
 ## the "book" package:
@@ -138,34 +147,26 @@ import datetime
 ## so we want to make a dataframe for our spatial data, assume two colums:
 
 ddir = "/usr/local/lib/R/site-library/STRbook/extdata/"
-
-os.listdir(ddir)
-
 stationInfo = (pd.read_csv(ddir+'Stationinfo.dat', header=None)
                 .iloc[:,0]
                 .str.split(expand=True)
                 .astype('float')
                 )
-
 stationInfo.columns=['id','lat','long']
 stationInfo['id'] = stationInfo['id'].astype('int')
 
 stationInfo ## that is the physical site data
 
-## temp data
-
+## data
 ## so now temp data?
 times = (pd.read_csv(ddir+'Times_1990.dat', header=None)
                 .iloc[:,0]
                 .str.split(expand=True)
     )
 times.columns = ['julian','year', 'month', 'day']
-
 ## this could be useful later
 pd.to_datetime(times[['year', 'month', 'day']])
-
 ## weather data is in a couple different tables:
-
 ## temp max
 tmax = (pd.read_csv(ddir+'Tmax_1990.dat', header=None)
                 .iloc[:,0]
@@ -173,9 +174,6 @@ tmax = (pd.read_csv(ddir+'Tmax_1990.dat', header=None)
                 .astype('int32')
     )
 tmax.columns = stationInfo['id']
-
-
-
 ## temp min
 tmin = (pd.read_csv(ddir+'Tmin_1990.dat', header=None)
                 .iloc[:,0]
@@ -183,7 +181,6 @@ tmin = (pd.read_csv(ddir+'Tmin_1990.dat', header=None)
                 .astype('int32')
     )
 tmin.columns = stationInfo['id']
-
 ## temp dewpoint
 tdp = (pd.read_csv(ddir+'TDP_1990.dat', header=None)
                 .iloc[:,0]
@@ -191,9 +188,7 @@ tdp = (pd.read_csv(ddir+'TDP_1990.dat', header=None)
                 .astype('float')
     )
 tdp.columns = stationInfo['id']
-
 ## precip
-
 precip = (pd.read_csv(ddir+'Precip_1990.dat', header=None)
                 .iloc[:,0]
                 .str.split(expand=True)
@@ -263,5 +258,86 @@ precip_l = makeLong(precip, -99.989998, 'precip')
 
 ## seems to work. Author says to put them 
 ## all together:
-aa = pd.concat([tmax_l, tdp_l, tmin_l, precip_l])
+NOAA_df_1990 = pd.concat([tmax_l, tdp_l, tmin_l, precip_l])
 
+NOAA_df_1990.to_csv('NOAA_df_1990.csv', index=False)
+
+NOAA_df_1990 = pd.read_csv('NOAA_df_1990.csv')
+
+## change the time stamp data format, 
+## the spatiotemp packages want yyyy-mm-dd:
+
+#### back to R to create sptemp data objects:
+
+library("sp")
+library("spacetime")
+
+## focus on the tmax data. I think we need a 
+## single date column, properly formatted
+
+tmax_l = makeLong(tmax, -998, 'tmax')
+tmax_l['date']= pd.to_datetime(tmax_l[['year', 'month', 'day']], yearfirst=True)
+## clean it up a bit
+tmax_l = tmax_l[['date', 'id', 'z']]
+## add latlong
+stationInfo.set_index('id', inplace=True)
+tmax_l['lat'] = tmax_l['id'].apply(lambda x: stationInfo.loc[x][0])
+tmax_l['long'] = tmax_l['id'].apply(lambda x: stationInfo.loc[x][1])
+
+## is this basically what spacetemp needs?
+
+tmax_l.to_csv('tmax_l.csv')
+
+## in R ##
+
+## the goal here is to create a spatioTemporalIrregularDataFrame (stidf)
+
+library(sp)
+library(spacetime)
+
+## use sp to make sp object
+
+tmax_l <- read.csv('ch2/tmax_l.csv')
+
+head(tmax_l)
+
+
+## I guess there are two ways to make the stidf: stConstruct and STIDF
+
+head(tmax_l[,c("date","z","lat","long")])
+
+tmax_l <- (tmax_l[,c("date","z","lat","long")])
+
+tmax_l[,'date']
+
+class(tmax_l$date)
+
+tmax_l$date <- as.Date(tmax_l$date)
+
+tmax_l$date
+
+stObj <- stConstruct(x = tmax_l, 
+    space = c("long","lat"),
+    time = "date")
+
+## that worked
+
+## I guess we can also do this?
+
+spat_part <- SpatialPoints(coords = tmax_l[, c("long", "lat")])
+## longitude first? weird.
+temp_part <- tmax_l[,'date']
+tmaxZ <- tmax_l[,'z'] 
+
+stObj2 <- STIDF(sp = spat_part,
+        time = temp_part,
+        data = tmax_l)
+
+tmaxspdf <- stObj2
+
+#save(tmaxspdf, file='tmaxspdf.rda')
+
+### great. we can also do a full, "regular" stdf, but we have to
+## use our missing data, so that no time slots are missing, etc.
+
+## back to python
