@@ -154,9 +154,6 @@ stationInfo = (pd.read_csv(ddir+'Stationinfo.dat', header=None)
                 )
 stationInfo.columns=['id','lat','long']
 stationInfo['id'] = stationInfo['id'].astype('int')
-
-stationInfo ## that is the physical site data
-
 ## data
 ## so now temp data?
 times = (pd.read_csv(ddir+'Times_1990.dat', header=None)
@@ -195,6 +192,14 @@ precip = (pd.read_csv(ddir+'Precip_1990.dat', header=None)
                 .astype('float')
     )
 precip.columns = stationInfo['id']
+
+## save for later
+stationInfo.to_csv('stationInfo.csv')
+times.to_csv('times.csv')
+tmax.to_csv('tmax.csv')
+tdp.to_csv('tdp.csv')
+tmin.to_csv('tmin.csv')
+precip.to_csv('precip.csv')
 
 tmax.iloc[0:3,0:3]
 
@@ -340,4 +345,92 @@ tmaxspdf <- stObj2
 ### great. we can also do a full, "regular" stdf, but we have to
 ## use our missing data, so that no time slots are missing, etc.
 
-## back to python
+## but I am not going to waste too much time on that for the 
+## moment. A pain. 
+
+## from here we are going to start the visualizations. Since I want to 
+## use d3js, this is going to take forever. I will need to work through
+## the R visualizations, then see how to create them with js. Slow as
+## mud. 
+
+## but maybe fun. 
+
+## anyway, exercise 2
+
+## visualize the max_temp data we just wrestled with
+
+install.packages("animation")
+
+library("animation")
+library("dplyr")
+library("ggplot2")
+library("gstat")
+library("maps")
+library("STRbook")
+
+set.seed(1)
+
+data("NOAA_df_1990", package="STRbook")
+
+Tmax <- filter(NOAA_df_1990, 
+                proc == "Tmax" & 
+                month %in% 5:9 &
+                year == 1993)
+
+
+Tmax %>% select(lon, lat, date, julian, z) %>% head()
+
+Tmax$t <- Tmax$julian - 728049
+
+## 
+
+Tmax_1 <- subset(Tmax, t %in% c(1,15,30))
+
+NOAA_plot <- ggplot(Tmax_1) +
+    geom_point(aes(x = lon,y = lat,
+                    colour = z),
+                size = 2) +
+    col_scale(name = "degF") +
+    xlab("Longitude (deg)") +
+    ylab("Latitude (deg)") +
+    geom_path(data = map_data("state"),
+        aes(x = long, y = lat, group = group)) +
+    facet_grid(~date) +
+    coord_fixed(xlim = c(-105, -75),
+    ylim = c(25, 50)) +
+    theme_bw()
+
+NOAA_plot
+
+## great. so as a first exercise, how would we plot this using
+## d3js?
+
+## this can be our first observables. 
+
+https://observablehq.com/@danchurch
+
+## bring in the books for tomorrow.  
+
+## my brainn hurts looking at js again.
+
+## what's the goal? Today let's run through a 
+## simple scatterplot tutorial.
+## maybe after that a map tutorial
+
+
+## so the first step - try to plot a scatter plot of a 
+## randomly generated normal errors around a 1:1 line
+
+## let's make a csv here in python and put it observables:
+
+import numpy as np
+import pandas as pd
+
+xx = pd.Series(np.linspace(1,100,100))
+yy = pd.Series(np.random.normal(xx, 10))
+
+zz = pd.concat([xx,yy], axis=1)
+zz.columns = ['X','Y']
+zz.to_csv('sampleData.csv', index=False)
+
+
