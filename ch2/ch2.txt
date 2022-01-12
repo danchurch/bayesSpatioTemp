@@ -433,4 +433,54 @@ zz = pd.concat([xx,yy], axis=1)
 zz.columns = ['X','Y']
 zz.to_csv('sampleData.csv', index=False)
 
+## observables really is an additional layer of complicated 
+
+## I have a lot of trouble keeping track of variable scopes,
+## and keeping track of what is js, d3js, and observable language
+
+## I really want to like it, but I can't right now. From here,
+## it looks better to set up a local environment for development 
+## and then publish on a website. 
+
+## so let's try to remember how to do this
+
+## I think chrome was the best for hard resets, do I have chrome?
+
+wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+
+sudo dpkg -i google-chrome-stable_current_amd64.deb
+ 
+## we'll need to manually update chrome, unless we want to 
+## add a google repo to our list. I don't, so...
+
+sudo apt install google-chrome-stable
+
+## great. we need an http server
+
+## i think I remember that the npm http-server worked well,
+## and also the busybox tools
+
+## we should have busybox
+
+busybox httpd
+
+## it's in there. test it with some simple html:
+
+busybox httpd -h ./project -p 8080
+
+## okay, what else? 
+## start writing your scripts in the old miniserver environment. 
+
+## find a website to test on. Either AA or 
+## get IT people to give you a webpage that will allow 
+## javascript
+
+## so for now, work on visualizations using local tools...
+
+## so a scatterplot in d3js
+
+##### scatter.js ####
+
+
+
 
