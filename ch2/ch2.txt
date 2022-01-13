@@ -477,10 +477,65 @@ busybox httpd -h ./project -p 8080
 
 ## so for now, work on visualizations using local tools...
 
-## so a scatterplot in d3js
+## so a scatterplot in d3js. 
 
-##### scatter.js ####
+## we practice locally with a busybox server, and on a website using the 
+## AA website
+
+## so to start off, we have lab 2.2 in the sptemp book,
+## which I think is some kind of chloropleth or something.
+## so we're going to jump right into maps with d3js. 
+
+## don't want to get lost in the R code they have.
+## it's brittle and relies on unsupported packages,
+## and ggplot, which I don't want to get into. 
+
+## so let's copy and paste:
+
+library("animation")
+library("dplyr")
+library("ggplot2")
+library("gstat")
+library("maps")
+library("STRbook")
 
 
+data("NOAA_df_1990", package = "STRbook")
+# subset the data
 
+Tmax <- filter(NOAA_df_1990,
+proc == "Tmax" &
+# only max temperature
+month %in% 5:9 &
+# May to September
+year == 1993)
+# year of 199
+## new time variable 
+Tmax$t <- Tmax$julian - 728049
+
+# extract data
+
+Tmax_1 <- subset(Tmax, t %in% c(1, 15, 30))
+
+NOAA_plot <- ggplot(Tmax_1) + # plot points
+    geom_point(aes(x = lon,y = lat, # lon and lat
+    colour = z), # attribute color
+    size = 2) + # make all points larger
+    col_scale(name = "degF") + # attach color scale
+    xlab("Longitude (deg)") + # x-axis label
+    ylab("Latitude (deg)") + # y-axis label
+    geom_path(data = map_data("state"), # add US states map
+        aes(x = long, y = lat, group = group)) + 
+    facet_grid(~date) + # facet by time 
+    coord_fixed (xlim = c(-105, -75),
+    ylim = c(25, 50)) + # zoom in
+    theme_bw()
+
+print(NOAA_plot)
+
+## whoah. This is going to be a challenge in d3js. 
+
+## but that's kind of what I was looking for. 
+
+## over to d3js, setup a new project folder for this
 
