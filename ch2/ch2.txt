@@ -516,7 +516,6 @@ Tmax$t <- Tmax$julian - 728049
 # extract data
 
 Tmax_1 <- subset(Tmax, t %in% c(1, 15, 30))
-
 NOAA_plot <- ggplot(Tmax_1) + # plot points
     geom_point(aes(x = lon,y = lat, # lon and lat
     colour = z), # attribute color
@@ -539,3 +538,13 @@ print(NOAA_plot)
 
 ## over to d3js, setup a new project folder for this
 
+## first step local
+
+## dev it here: cd /home/daniel/Documents/learn/spTemp/js/ch2/fig2.1
+
+## we need to make our map panel limits fit those of the example map
+## and put a background grid on it...
+
+## and put data on it...(= first problem)
+
+ 
