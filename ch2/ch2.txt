@@ -547,4 +547,15 @@ print(NOAA_plot)
 
 ## and put data on it...(= first problem)
 
+## put this on the repo:
+
+write.csv(Tmax_1, file="Tmax_1.csv")
  
+min(Tmax_1$lat) ## 32.13334
+max(Tmax_1$lat) ## 45.86666
+
+min(Tmax_1$lon) ## -99.96667
+
+max(Tmax_1$lon) ## -80.03333
+
+
