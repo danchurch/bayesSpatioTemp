@@ -558,4 +558,15 @@ min(Tmax_1$lon) ## -99.96667
 
 max(Tmax_1$lon) ## -80.03333
 
+## how can we constrain this plot to just the intersting area of the map?
 
+
+## also we want three of these. Is this possible? Should we put them 
+## all in one 
+
+## I think for this we need start building the CSS 
+
+## but maybe first, we need to clip the state polygons down to the interesting
+## area..
+
+max(Tmax_1$lat)

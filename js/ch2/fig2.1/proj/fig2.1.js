@@ -16,7 +16,7 @@ function main(){
   let geoGenerator = d3.geoPath().projection(projection);
 
   // state drawing function:
-  function renderStates(data) {
+  function renderStates(data, data2) {
     projection.fitSize([facetWidth, facetHeight], data);
     let dontWant = ["Hawaii","Alaska","Puerto Rico"];
     data.features = data.features.filter(x => {return(!dontWant.includes(x.properties.name))});
@@ -28,8 +28,36 @@ function main(){
       .attr('d', geoGenerator)
       .attr('fill', '#ffffff')
       .attr('stroke', '#000')
-    };
 
+      // the above renders all the USA lower 48 states
+      // now let's make a station-based clipped rectangle:
+
+     let statsXminLon = d3.min(data2, d => d.lon);
+     let statsXmaxLon = d3.max(data2, d => d.lon);
+     let statsYminLat = d3.min(data2, d => d.lat);
+     let statsYmaxLat = d3.max(data2, d => d.lat);
+
+     console.log(statsYmaxLat = d3.max(data2, d => d.lat));
+
+       //.attr( "cy", d => projection([d.lon, d.lat])[1]);
+
+     svg1.append("rect")
+       //.attr('x',100) 
+       .attr("x", projection([statsXmaxLon, statsYmaxLat])[0])
+       .attr("y", projection([statsXmaxLon, statsYmaxLat])[1])
+       .attr('width', 100)
+       .attr('height', 100)
+       //.attr('width', projection([statsXmaxLon, statsYmaxLat])[0]) 
+       //.attr('height', projection([statsXmaxLon, statsYmaxLat])[1]) 
+       .attr('fill','black');
+
+     svg1.append("circle")
+       .attr("cx", projection([statsXminLon, statsYmaxLat])[0])
+       .attr("cy", projection([statsXminLon, statsYmaxLat])[1])
+       .attr("fill","purple")
+       .attr("r","20");
+
+    };
   // station plotting function:
   function drawStations(data){
     svg1.append("g").attr('id',"stationCircs")
@@ -41,14 +69,15 @@ function main(){
         .attr("fill", "red")
         .attr( "cx", d => projection([d.lon, d.lat])[0])
         .attr( "cy", d => projection([d.lon, d.lat])[1]);
-    };
+  };
 
-  // now do the deed:
+
+  // now do the rendering:
   d3.json('https://gist.githubusercontent.com/mheydt/29eec003a4c0af362d7a/raw/d27d143bd75626647108fc514d8697e0814bf74b/us-states.json')
     .then(function(mapUSA) {
       d3.csv("https://raw.githubusercontent.com/danchurch/bayesSpatioTemp/main/js/ch2/fig2.1/Tmax_1.csv")
         .then(function(stationData){
-           renderStates(mapUSA);
+           renderStates(mapUSA, stationData);
            drawStations(stationData);
     });
   });
