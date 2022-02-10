@@ -29,33 +29,43 @@ function main(){
       .attr('fill', '#ffffff')
       .attr('stroke', '#000')
 
-      // the above renders all the USA lower 48 states
-      // now let's make a station-based clipped rectangle:
+    let statsXminLon = d3.min(data2, d => d.lon);
+    let statsXmaxLon = d3.max(data2, d => d.lon);
+    let statsYminLat = d3.min(data2, d => d.lat);
+    let statsYmaxLat = d3.max(data2, d => d.lat);
 
-     let statsXminLon = d3.min(data2, d => d.lon);
-     let statsXmaxLon = d3.max(data2, d => d.lon);
-     let statsYminLat = d3.min(data2, d => d.lat);
-     let statsYmaxLat = d3.max(data2, d => d.lat);
 
-     console.log(statsYmaxLat = d3.max(data2, d => d.lat));
+    // we need a function for to apply on all of our long/lats
+    // at once, then take the maxima/minima
 
-       //.attr( "cy", d => projection([d.lon, d.lat])[1]);
 
-     svg1.append("rect")
-       //.attr('x',100) 
-       .attr("x", projection([statsXmaxLon, statsYmaxLat])[0])
-       .attr("y", projection([statsXmaxLon, statsYmaxLat])[1])
-       .attr('width', 100)
-       .attr('height', 100)
-       //.attr('width', projection([statsXmaxLon, statsYmaxLat])[0]) 
-       //.attr('height', projection([statsXmaxLon, statsYmaxLat])[1]) 
-       .attr('fill','black');
+    let pixes = data2.map(getPixFromLonLat);
+    let statsXminPix = d3.min(pixes, d => d[0]);
+    let statsXmaxPix = d3.max(pixes, d => d[0]);
+    let statsYminPix = d3.min(pixes, d => d[1]);
+    let statsYmaxPix = d3.max(pixes, d => d[1]);
+    let centerOfStatsPix = [(statsXmaxPix - statsXminPix)/2,
+                                (statsYmaxPix - statsYminPix)/2];
+    console.log(centerOfStatsPix)
 
-     svg1.append("circle")
-       .attr("cx", projection([statsXminLon, statsYmaxLat])[0])
-       .attr("cy", projection([statsXminLon, statsYmaxLat])[1])
-       .attr("fill","purple")
-       .attr("r","20");
+    function getPixFromLonLat(lonlat){
+        let pixCoords = projection([lonlat.lon, lonlat.lat]);
+        return pixCoords;
+        }
+
+
+    svg1.append("circle")
+      .attr("cx", centerOfStatsPix[0])
+      .attr("cy", centerOfStatsPix[1])
+      .attr("fill","purple")
+      .attr("r","20");
+
+    //svg1.append("rect")
+    //  .attr("x", statsXminPix)
+    //  .attr("y", statsYminPix)
+    //  .attr('width', 300)
+    //  .attr('height', 300)
+    //  .attr('fill','black');
 
     };
   // station plotting function:
@@ -92,3 +102,5 @@ function main(){
 
 // this is the one to follow on next session:
 //https://www.tutorialguruji.com/javascript/drawing-circles-via-d3js-and-converting-coordinates/
+
+// ugh this is hard. 
