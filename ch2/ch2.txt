@@ -466,7 +466,7 @@ busybox httpd
 
 ## it's in there. test it with some simple html:
 
-busybox httpd -h ./project -p 8080
+busybox httpd -h ./proj -p 8080
 
 ## okay, what else? 
 ## start writing your scripts in the old miniserver environment. 
@@ -570,3 +570,5 @@ max(Tmax_1$lon) ## -80.03333
 ## area..
 
 max(Tmax_1$lat)
+
+

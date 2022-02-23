@@ -3,7 +3,7 @@ window.addEventListener("load", main)
 function main(){
 
   // base svg and svg props
-  const width = 600, height = 600;
+  const width = 400, height = 400;
   let facetWidth = width; //for now
   let facetHeight = height; //for now
   let svg1 = d3.select("#plot").append('svg')
@@ -17,10 +17,27 @@ function main(){
 
   // state drawing function:
   function renderStates(data, data2) {
-    projection.fitSize([facetWidth, facetHeight], data);
+
+    // get rid of non-contiguous states:
     let dontWant = ["Hawaii","Alaska","Puerto Rico"];
     data.features = data.features.filter(x => {return(!dontWant.includes(x.properties.name))});
+    projection.fitSize([facetWidth, facetHeight], data); //have to do this before using projection in any functions!
+
+    let pixes = data2.map(getPixFromLonLat);
+    let statsXminPix = d3.min(pixes, d => d[0]);
+    let statsXmaxPix = d3.max(pixes, d => d[0]);
+    let statsYminPix = d3.min(pixes, d => d[1]);
+    let statsYmaxPix = d3.max(pixes, d => d[1]);
+    const clipRectBuff = 10;
+
+
+    function getPixFromLonLat(lonlat){
+        let pixCoords = projection([lonlat.lon, lonlat.lat]);
+        return pixCoords;
+        }
+
     svg1.append('g')
+    .attr('id','statePaths')
     .attr('id','statePaths')
     .selectAll('path')
       .data(data.features)
@@ -29,43 +46,20 @@ function main(){
       .attr('fill', '#ffffff')
       .attr('stroke', '#000')
 
-    let statsXminLon = d3.min(data2, d => d.lon);
-    let statsXmaxLon = d3.max(data2, d => d.lon);
-    let statsYminLat = d3.min(data2, d => d.lat);
-    let statsYmaxLat = d3.max(data2, d => d.lat);
 
+    svg1.append("rect")
+      .attr("x", statsXminPix - clipRectBuff)
+      .attr("y", statsYminPix - clipRectBuff)
+      .attr('width', statsXmaxPix - statsXminPix + (2*clipRectBuff))
+      .attr('height', statsYmaxPix - statsYminPix + (2*clipRectBuff))
+      .attr('fill','none')
+      .attr("style","fill:blue;stroke:black;stroke-width:5;fill-opacity:0.1;stroke-opacity:0.9");
 
-    // we need a function for to apply on all of our long/lats
-    // at once, then take the maxima/minima
-
-
-    let pixes = data2.map(getPixFromLonLat);
-    let statsXminPix = d3.min(pixes, d => d[0]);
-    let statsXmaxPix = d3.max(pixes, d => d[0]);
-    let statsYminPix = d3.min(pixes, d => d[1]);
-    let statsYmaxPix = d3.max(pixes, d => d[1]);
-    let centerOfStatsPix = [(statsXmaxPix - statsXminPix)/2,
-                                (statsYmaxPix - statsYminPix)/2];
-    console.log(centerOfStatsPix)
-
-    function getPixFromLonLat(lonlat){
-        let pixCoords = projection([lonlat.lon, lonlat.lat]);
-        return pixCoords;
-        }
-
-
-    svg1.append("circle")
-      .attr("cx", centerOfStatsPix[0])
-      .attr("cy", centerOfStatsPix[1])
-      .attr("fill","purple")
-      .attr("r","20");
-
-    //svg1.append("rect")
-    //  .attr("x", statsXminPix)
-    //  .attr("y", statsYminPix)
-    //  .attr('width', 300)
-    //  .attr('height', 300)
-    //  .attr('fill','black');
+    //svg1.append("circle")
+    //  .attr("cx", statsXmaxPix)
+    //  .attr("cy", statsYmaxPix)
+    //  .attr("fill","purple")
+    //  .attr("r","20");
 
     };
   // station plotting function:
@@ -94,7 +88,6 @@ function main(){
 } // end of main, anything past here is probably a mistake
 
 
-// really we need to figure out how to use our projections for this:
 
 //https://mappingwithd3.com/
 //https://github.com/topojson/us-atlas
@@ -103,4 +96,5 @@ function main(){
 // this is the one to follow on next session:
 //https://www.tutorialguruji.com/javascript/drawing-circles-via-d3js-and-converting-coordinates/
 
-// ugh this is hard. 
+// check out projection.invert(), may be useful
+
