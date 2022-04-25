@@ -567,8 +567,33 @@ max(Tmax_1$lon) ## -80.03333
 ## I think for this we need start building the CSS 
 
 ## but maybe first, we need to clip the state polygons down to the interesting
-## area..
+## area. 
 
 max(Tmax_1$lat)
 
+## how do we subset to states  
 
+## We need to know which states have one of our points in them?
+
+## is this useful?:
+# d3.geoClipRectangle(x0, y0, x1, y1)
+
+## or 
+projection.clipExtent([extent]) 
+
+## this might be more current:
+
+d3.geoClipExtent
+
+## also interesting:
+d3.geoBounds
+
+## forgot where we were on this...
+## oh yeah, we've been stuck forever 
+## trying to clip this map down to size. 
+
+## this should be stupidly simple. maybe best to 
+## get help. Make a toy example? 
+
+## make copy, pare js down to a bounding 
+## box and the us map. 
