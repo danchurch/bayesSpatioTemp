@@ -13,25 +13,30 @@ function main(){
   // let projection = d3.geoAlbersUsa();
   let projection = d3.geoEquirectangular()
     //.center([-80,30])
-    .translate([200, 200])
-    .scale(400)
+    .translate([220, 200])
+    .scale(1000)
     ;
   let geoGenerator = d3.geoPath().projection(projection);
 
   // function to center and scale based on extent of station data:
-  function getCenterExtent(mapCoords) {
-    let allLats = mapCoords.map( d => d.lat );
-    let allLons = mapCoords.map( d => d.lon );
+  function getCenterExtent(stationData) {
+    let allLats = stationData.map( d => d.lat );
+    let allLons = stationData.map( d => d.lon );
     let centersLatLon = {"lon":d3.mean(allLons), "lat":d3.mean(allLats)};
     return(centersLatLon);
   };
+
+  // function to get the min/max of the temperature data:
+  function getTempRange(stationData) {
+    let temps = stationData.map( d => d.z );
+    let tempRange = [ d3.min(temps), d3.mean(temps), d3.max(temps) ];
+    return(tempRange);
+  }
 
   // state drawing function:
   function renderStates(data, data2) {
     let centerCoords = getCenterExtent(data2); 
     projection.center([centerCoords.lon, centerCoords.lat]);
-    console.log([centerCoords.lon, centerCoords.lat]);
-    //projection.center([-80,30]);
     svg1.append('g')
     .attr('id','statePaths')
     .selectAll('path')
@@ -44,13 +49,18 @@ function main(){
 
   // station plotting function:
   function drawStations(data){
+    console.log(data);
+    console.log(getTempRange(data));
+    let colorSc = d3.scaleLinear()
+        .domain(getTempRange(data))
+        .range(['green','yellow','red']);
     svg1.append("g").attr('id',"stationCircs")
       .selectAll("circle")
       .data(data)
       .enter()
       .append("circle")
         .attr("r", 2)
-        .attr("fill", "red")
+        .attr("fill", d => colorSc(d.z))
         .attr( "cx", d => projection([d.lon, d.lat])[0])
         .attr( "cy", d => projection([d.lon, d.lat])[1]);
   };
