@@ -10,7 +10,6 @@ function main(){
     .attr("id", "svg1");
 
   // projection and generator
-  // let projection = d3.geoAlbersUsa();
   let projection = d3.geoEquirectangular()
     //.center([-80,30])
     .translate([220, 200])
@@ -49,8 +48,6 @@ function main(){
 
   // station plotting function:
   function drawStations(data){
-    console.log(data);
-    console.log(getTempRange(data));
     let colorSc = d3.scaleLinear()
         .domain(getTempRange(data))
         .range(['green','yellow','red']);
@@ -65,6 +62,25 @@ function main(){
         .attr( "cy", d => projection([d.lon, d.lat])[1]);
   };
 
+  // add graticules
+  function addGraticules(){
+    let graticuleGenerator = d3.geoGraticule();
+    let graticules = graticuleGenerator();
+    console.log(graticules);
+    svg1.append("g").attr('id',"graticules")
+      .append("path")
+        .attr('d', geoGenerator(graticules))
+        .attr('fill', '#ffffff')
+        .attr('stroke', 'CadetBlue');
+      ;
+
+    //let graticuleGenerator = d3.geoGraticule();
+    //let graticules = graticuleGenerator();
+    //geoGenerator(graticules);
+    }
+
+
+
 
   // now do the rendering:
   d3.json('https://gist.githubusercontent.com/mheydt/29eec003a4c0af362d7a/raw/d27d143bd75626647108fc514d8697e0814bf74b/us-states.json')
@@ -73,21 +89,20 @@ function main(){
         .then(function(stationData){
            renderStates(mapUSA, stationData);
            drawStations(stationData);
+           addGraticules();
     });
   });
 } // end of main, anything past here is probably a mistake
 
 
 
-//https://mappingwithd3.com/
-//https://github.com/topojson/us-atlas
+
 //https://www.d3indepth.com/geographic/
 
-// this is where we need to do a lot of reading:
-//https://www.d3indepth.com/geographic/
+// add graticules
+// to tile this...try the three SVG approach?
+// which means that the functions need to be made more 
+// modular/re-usable.
+// today, just add the graticules? 
 
-// this is the one to follow on next session:
-//https://www.tutorialguruji.com/javascript/drawing-circles-via-d3js-and-converting-coordinates/
-
-// check out projection.invert(), may be useful
 
