@@ -4,15 +4,14 @@ function main(){
 
   // base svg and svg props
   const width = 400, height = 400;
-  let svg1 = d3.select("#plot").append('svg')
-    .style("width", width)
-    .style("height", height)
-    .attr("id", "svg1");
+  let exampleName = "zoop";
+  let thisMap = d3.select("#map").append('g');
+    thisMap.attr("id", exampleName);
 
   // projection and generator
   let projection = d3.geoEquirectangular()
     //.center([-80,30])
-    .translate([220, 200])
+    .translate([width/2, height/2])
     .scale(1000)
     ;
   let geoGenerator = d3.geoPath().projection(projection);
@@ -36,7 +35,7 @@ function main(){
   function renderStates(data, data2) {
     let centerCoords = getCenterExtent(data2); 
     projection.center([centerCoords.lon, centerCoords.lat]);
-    svg1.append('g')
+    thisMap.append('g')
     .attr('id','statePaths')
     .selectAll('path')
       .data(data.features)
@@ -51,7 +50,7 @@ function main(){
     let colorSc = d3.scaleLinear()
         .domain(getTempRange(data))
         .range(['green','yellow','red']);
-    svg1.append("g").attr('id',"stationCircs")
+    thisMap.append("g").attr('id',"stationCircs")
       .selectAll("circle")
       .data(data)
       .enter()
@@ -66,20 +65,19 @@ function main(){
   function addGraticules(){
     let graticuleGenerator = d3.geoGraticule();
     let graticules = graticuleGenerator();
-    console.log(graticules);
-    svg1.append("g").attr('id',"graticules")
+    thisMap.append("g").attr('id',"graticules")
       .append("path")
         .attr('d', geoGenerator(graticules))
         .attr('fill', '#ffffff')
         .attr('stroke', 'CadetBlue');
-      ;
 
-    //let graticuleGenerator = d3.geoGraticule();
-    //let graticules = graticuleGenerator();
-    //geoGenerator(graticules);
     }
 
-
+    function make1map(mapUSA, stationData){
+           renderStates(mapUSA, stationData);
+           drawStations(stationData);
+           addGraticules();
+    };
 
 
   // now do the rendering:
@@ -87,22 +85,11 @@ function main(){
     .then(function(mapUSA) {
       d3.csv("https://raw.githubusercontent.com/danchurch/bayesSpatioTemp/main/js/ch2/fig2.1/Tmax_1.csv")
         .then(function(stationData){
-           renderStates(mapUSA, stationData);
-           drawStations(stationData);
-           addGraticules();
+           make1map(mapUSA, stationData);
     });
   });
 } // end of main, anything past here is probably a mistake
 
 
-
-
 //https://www.d3indepth.com/geographic/
-
-// add graticules
-// to tile this...try the three SVG approach?
-// which means that the functions need to be made more 
-// modular/re-usable.
-// today, just add the graticules? 
-
 
