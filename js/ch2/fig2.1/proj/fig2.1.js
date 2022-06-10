@@ -10,7 +10,7 @@ function main(){
 
   // projection and generator
   let projection = d3.geoEquirectangular()
-    //.center([-80,30])
+    .center([-89.04423584210527, 38.66203010526314])
     .translate([width/2, height/2])
     .scale(1000)
     ;
@@ -30,6 +30,7 @@ function main(){
     let tempRange = [ d3.min(temps), d3.mean(temps), d3.max(temps) ];
     return(tempRange);
   }
+
 
   // state drawing function:
   function renderStates(data, data2) {
@@ -70,14 +71,33 @@ function main(){
         .attr('d', geoGenerator(graticules))
         .attr('fill', '#ffffff')
         .attr('stroke', 'CadetBlue');
-
     }
 
-    function make1map(mapUSA, stationData){
-           renderStates(mapUSA, stationData);
-           drawStations(stationData);
-           addGraticules();
-    };
+  function clipByStations(stationData){
+    let xMinLL = d3.min(stationData, d => +d.lon);
+    let yMinLL = d3.min(stationData, d => +d.lat);
+    let xMaxLL = d3.max(stationData, d => +d.lon);
+    let yMaxLL = d3.max(stationData, d => +d.lat);
+
+    [xMinPix, yMaxPix] = projection([xMinLL, yMinLL]);
+    [xMaxPix, yMinPix] = projection([xMaxLL, yMaxLL]);
+
+    const buff = 5;
+    projection.postclip(d3.geoClipRectangle(xMinPix - buff,
+                                            yMinPix - buff,
+                                            xMaxPix + buff,
+                                            yMaxPix + buff));
+    }
+
+
+
+
+  function make1map(mapUSA, stationData){
+         clipByStations(stationData);
+         renderStates(mapUSA, stationData);
+         drawStations(stationData);
+         addGraticules();
+  };
 
 
   // now do the rendering:
