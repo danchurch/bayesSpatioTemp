@@ -4,9 +4,10 @@ function main(){
 
   // base svg and svg props
   const width = 400, height = 400;
-  let exampleName = "zoop";
-  let thisMap = d3.select("#map").append('g');
-    thisMap.attr("id", exampleName);
+
+  //let exampleName = "zoop";
+  //let thisMap = d3.select("#map").append('g');
+  //  thisMap.attr("id", exampleName);
 
   // projection and generator
   let projection = d3.geoEquirectangular()
@@ -33,13 +34,13 @@ function main(){
 
 
   // state drawing function:
-  function renderStates(data, data2) {
-    let centerCoords = getCenterExtent(data2); 
+  function renderStates(stateData, stationData, thisMap) {
+    let centerCoords = getCenterExtent(stationData); 
     projection.center([centerCoords.lon, centerCoords.lat]);
     thisMap.append('g')
-    .attr('id','statePaths')
+    .attr('class','statePaths')
     .selectAll('path')
-      .data(data.features)
+      .data(stateData.features)
       .join('path')
       .attr('d', geoGenerator)
       .attr('fill', '#ffffff')
@@ -47,13 +48,13 @@ function main(){
     };
 
   // station plotting function:
-  function drawStations(data){
+  function drawStations(stationData, thisMap){
     let colorSc = d3.scaleLinear()
-        .domain(getTempRange(data))
+        .domain(getTempRange(stationData))
         .range(['green','yellow','red']);
-    thisMap.append("g").attr('id',"stationCircs")
+    thisMap.append("g").attr('class',"stationCircs")
       .selectAll("circle")
-      .data(data)
+      .data(stationData)
       .enter()
       .append("circle")
         .attr("r", 2)
@@ -63,17 +64,17 @@ function main(){
   };
 
   // add graticules
-  function addGraticules(){
+  function addGraticules(thisMap){
     let graticuleGenerator = d3.geoGraticule();
     let graticules = graticuleGenerator();
-    thisMap.append("g").attr('id',"graticules")
+    thisMap.append("g").attr('class',"graticules")
       .append("path")
         .attr('d', geoGenerator(graticules))
         .attr('fill', '#ffffff')
         .attr('stroke', 'CadetBlue');
     }
 
-  function clipByStations(stationData){
+  function clipByStations(stationData) {
     let xMinLL = d3.min(stationData, d => +d.lon);
     let yMinLL = d3.min(stationData, d => +d.lat);
     let xMaxLL = d3.max(stationData, d => +d.lon);
@@ -90,26 +91,37 @@ function main(){
     }
 
 
-
-
-  function make1map(mapUSA, stationData){
+  function make1map(stateData, stationData, mapName){
          clipByStations(stationData);
-         renderStates(mapUSA, stationData);
-         drawStations(stationData);
-         addGraticules();
+         let thisMap = d3.select("#map").append('g'); //make group to work on
+         thisMap.attr("id", mapName);
+         renderStates(stateData, stationData, thisMap);
+         drawStations(stationData, thisMap);
+         addGraticules(thisMap);
   };
 
 
   // now do the rendering:
   d3.json('https://gist.githubusercontent.com/mheydt/29eec003a4c0af362d7a/raw/d27d143bd75626647108fc514d8697e0814bf74b/us-states.json')
-    .then(function(mapUSA) {
+    .then(function(stateData) {
       d3.csv("https://raw.githubusercontent.com/danchurch/bayesSpatioTemp/main/js/ch2/fig2.1/Tmax_1.csv")
         .then(function(stationData){
-           make1map(mapUSA, stationData);
+           make1map(stateData, stationData,'firstMap');
+           make1map(stateData, stationData,'secondMap');
+           make1map(stateData, stationData,'thirdMap');
+           firstMap = d3.select('#firstMap');
+           firstMap.attr('transform','scale(0.33 0.33) translate(50 50)');
+           secondMap = d3.select('#secondMap');
+           secondMap.attr('transform','scale(0.33 0.33) translate(100 100)');
+           thirdMap = d3.select('#thirdMap');
+           thirdMap.attr('transform','scale(0.33 0.33) translate(150 150)');
     });
   });
 } // end of main, anything past here is probably a mistake
 
-
 //https://www.d3indepth.com/geographic/
+
+// how do we make this 3x repeatable, with different station data?
+// try making three identical maps in one svg
+// update the data sources 
 

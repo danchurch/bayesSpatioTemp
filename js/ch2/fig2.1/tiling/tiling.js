@@ -7,28 +7,16 @@ function main(){
     .then( function(mapUSA) {
     const width = 400, height = 400;
 
-    // our bounding box long/lat looks something like this:
-    let polygon = [
-                                [-80.033333, 32.133335],
-                                [-99.966667, 32.133335],
-                                [-99.966667, 45.866665],
-                                [-80.033333, 45.866665],
-                                [-80.033333, 32.133335]
-              ];
 
-    // but what if we want to figure this out directly from our station 
-    // station data?
-
+    // bounding box directly from our station data:
     let xMinLL = d3.min(stations, d => +d.lon);
     let yMinLL = d3.min(stations, d => +d.lat);
     let xMaxLL = d3.max(stations, d => +d.lon);
     let yMaxLL = d3.max(stations, d => +d.lat);
 
 
-    // the plus signs coerce js to read these as numbers, not as strings
-
     let projection = d3.geoEquirectangular()
-      .translate([width/2, height/2])
+      //.translate([width/2, height/2])
       .scale(1000)
       .center([-89.04423584210527, 38.66203010526314])
       ;
@@ -53,21 +41,51 @@ function main(){
 
     let geogenerator = d3.geoPath().projection(projection);
 
-    let states = svg1.append('g')
-        .attr("id", "states")
+    let smallXmax = (xMaxPix/3 + 2*buff + width/2);
+    console.log(smallXmax);
+
+
+    let states1 = svg1.append('g')
+        .attr("id", "states1")
         .selectAll('path')
         .data(mapUSA.features)
         .join("path")
         .attr('d', geogenerator)
         .attr('fill','#ffffff')
         .attr('stroke','#000')
+        .attr('transform','scale(0.333 0.333)')
+        ;
+
+    //let states2 = svg1.append('g')
+    //    .attr("id", "states2")
+    //    .selectAll('path')
+    //    .data(mapUSA.features)
+    //    .join("path")
+    //    .attr('d', geogenerator)
+    //    .attr('fill','#ffffff')
+    //    .attr('stroke','#000')
+    //    ;
+
+    let states3 = svg1.append('g')
+        .attr("id", "states3")
+        .selectAll('path')
+        .data(mapUSA.features)
+        .join("path")
+        .attr('d', geogenerator)
+        .attr('fill','#ffffff')
+        .attr('stroke','#000')
+        .attr('transform','scale(0.333 0.333) translate('+smallXmax+' 0)')
         ;
 
 })})}
 
-// works, add to main map.
 // but how do we tile? As in, three maps, one svg
 // or maybe three svgs?
 // I think the first
+// should be as simple as making a group out of the 
+// the above 
+// as in, run the above plotting function three 
+// times, each in its own group
+// then move and scale them into place.
 
 
