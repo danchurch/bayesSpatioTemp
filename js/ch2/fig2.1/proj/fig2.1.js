@@ -3,11 +3,10 @@ window.addEventListener("load", main)
 function main(){
 
   // base svg and svg props
-  const width = 400, height = 400;
-
-  //let exampleName = "zoop";
-  //let thisMap = d3.select("#map").append('g');
-  //  thisMap.attr("id", exampleName);
+  const width = 1200, height = 400;
+  svgBase = d3.select('#map')
+    .attr('width', width)
+    .attr('height', height);
 
   // projection and generator
   let projection = d3.geoEquirectangular()
@@ -49,6 +48,25 @@ function main(){
 
   // station plotting function:
   function drawStations(stationData, thisMap){
+    let stationDataToday = stationData.filter( today => +stationData.day == 1 );
+    //console.log(stationDataToday);
+    //console.log(stationData.day);
+
+  let cities = [
+      {name: 'Los Angeles', population: 3792621},
+      {name: 'New York', population: 8175133},
+      {name: 'Chicago', population: 2695598},
+      {name: 'Houston', population: 2099451},
+      {name: 'Philadelphia', population: 1526006}
+  ];
+
+    console.log(cities);
+    console.log(cities.filter(city => city.population > 3000000));
+
+
+
+
+
     let colorSc = d3.scaleLinear()
         .domain(getTempRange(stationData))
         .range(['green','yellow','red']);
@@ -110,18 +128,18 @@ function main(){
            make1map(stateData, stationData,'secondMap');
            make1map(stateData, stationData,'thirdMap');
            firstMap = d3.select('#firstMap');
-           firstMap.attr('transform','scale(0.33 0.33) translate(50 50)');
+           firstMap.attr('transform','scale(0.33 0.33) translate(' 
+                                    + -firstMap.node().getBBox().x + ' 0)');
            secondMap = d3.select('#secondMap');
-           secondMap.attr('transform','scale(0.33 0.33) translate(100 100)');
+           secondMap.attr('transform','scale(0.33 0.33)');
            thirdMap = d3.select('#thirdMap');
-           thirdMap.attr('transform','scale(0.33 0.33) translate(150 150)');
+           thirdMap.attr('transform','scale(0.33 0.33) translate(400 0)');
+           console.log(stationData);
     });
   });
 } // end of main, anything past here is probably a mistake
 
 //https://www.d3indepth.com/geographic/
 
-// how do we make this 3x repeatable, with different station data?
-// try making three identical maps in one svg
-// update the data sources 
+// how do we update the data sources 
 

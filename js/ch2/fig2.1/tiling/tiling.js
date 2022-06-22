@@ -5,8 +5,8 @@ function main(){
     .then(function(stations){
   d3.json('https://gist.githubusercontent.com/mheydt/29eec003a4c0af362d7a/raw/d27d143bd75626647108fc514d8697e0814bf74b/us-states.json')
     .then( function(mapUSA) {
-    const width = 400, height = 400;
-
+    //const width = 400, height = 400;
+    const width = 1200, height = 400;
 
     // bounding box directly from our station data:
     let xMinLL = d3.min(stations, d => +d.lon);
