@@ -48,25 +48,6 @@ function main(){
 
   // station plotting function:
   function drawStations(stationData, thisMap){
-    let stationDataToday = stationData.filter( today => +stationData.day == 1 );
-    //console.log(stationDataToday);
-    //console.log(stationData.day);
-
-  let cities = [
-      {name: 'Los Angeles', population: 3792621},
-      {name: 'New York', population: 8175133},
-      {name: 'Chicago', population: 2695598},
-      {name: 'Houston', population: 2099451},
-      {name: 'Philadelphia', population: 1526006}
-  ];
-
-    console.log(cities);
-    console.log(cities.filter(city => city.population > 3000000));
-
-
-
-
-
     let colorSc = d3.scaleLinear()
         .domain(getTempRange(stationData))
         .range(['green','yellow','red']);
@@ -124,9 +105,12 @@ function main(){
     .then(function(stateData) {
       d3.csv("https://raw.githubusercontent.com/danchurch/bayesSpatioTemp/main/js/ch2/fig2.1/Tmax_1.csv")
         .then(function(stationData){
-           make1map(stateData, stationData,'firstMap');
-           make1map(stateData, stationData,'secondMap');
-           make1map(stateData, stationData,'thirdMap');
+           let stations1 = stationData.filter(stationToday => stationToday.day == 1);
+           let stations15 = stationData.filter(stationToday => stationToday.day == 15);
+           let stations30 = stationData.filter(stationToday => stationToday.day == 30);
+           make1map(stateData, stations1,'firstMap');
+           make1map(stateData, stations15,'secondMap');
+           make1map(stateData, stations30,'thirdMap');
            firstMap = d3.select('#firstMap');
            firstMap.attr('transform','scale(0.33 0.33) translate(' 
                                     + -firstMap.node().getBBox().x + ' 0)');
@@ -135,6 +119,13 @@ function main(){
            thirdMap = d3.select('#thirdMap');
            thirdMap.attr('transform','scale(0.33 0.33) translate(400 0)');
            console.log(stationData);
+
+
+           console.log(stations1);
+           console.log(stations15);
+           console.log(stations30);
+
+
     });
   });
 } // end of main, anything past here is probably a mistake
