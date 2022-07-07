@@ -638,3 +638,15 @@ data("BEA", package="STRbook")
 
 data("MOcounties", package="STRbook")
 
+## let's export this into our comfort zones:
+
+write.csv(MOcounties, file='/home/daniel/Desktop/MOcounties.csv')
+
+#### go to python ####
+
+import pandas as pd
+
+aa = pd.read_csv('/home/daniel/Documents/learn/spTemp/dataSets/ch2/MOcounties.csv')
+
+aa.columns
+
