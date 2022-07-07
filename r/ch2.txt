@@ -633,4 +633,8 @@ grep -r "STRbook" /usr/local/lib/R/site-library
 system.file(package="STRbook")
 
 data("BEA", package="STRbook")
-## 
+
+## great, and where do we get the income data?
+
+data("MOcounties", package="STRbook")
+
