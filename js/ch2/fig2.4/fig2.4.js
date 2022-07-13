@@ -6,10 +6,20 @@ function main(){
 
         console.log(counties);
 
+        //let aa = counties.features.filter(d => d.properties.NAME === "Henry");
+        //let aa = counties.features.map(d => d.properties.NAME);
+        //console.log(aa);
+
+        // this also works, if we don't know the entire string:  
+        //let bb = counties.features.filter( d => d.NAME == 'St. Louis');
+        let bb = counties.features.filter( d => d.properties.NAME.includes('Louis')); 
+        console.log(bb);
+
+
         const width = 100, height = 100;
         let projection = d3.geoEquirectangular()
             .translate([width/2, height/2])
-            .scale(1000)
+            .scale(800)
             .center([-92.6, 38.47])
         ;
       

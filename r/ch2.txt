@@ -632,21 +632,132 @@ grep -r "STRbook" /usr/local/lib/R/site-library
 
 system.file(package="STRbook")
 
+## great, and where do we get the income data?
 data("BEA", package="STRbook")
 
-## great, and where do we get the income data?
-
+## this I think is the geo data
 data("MOcounties", package="STRbook")
+## we'll get this elsewhere and reformat
 
-## let's export this into our comfort zones:
+##  
 
-write.csv(MOcounties, file='/home/daniel/Desktop/MOcounties.csv')
+write.csv(BEA, file='/home/daniel/Desktop/MOincomes.csv')
+
+## can we link these two spatially?
 
 #### go to python ####
 
 import pandas as pd
+import geopandas as gpd
+import re
 
-aa = pd.read_csv('/home/daniel/Documents/learn/spTemp/dataSets/ch2/MOcounties.csv')
+incomes = pd.read_csv('/home/daniel/Documents/learn/spTemp/dataSets/ch2/MOincomes.csv').dropna()
 
-aa.columns
+counties = pd.read_csv('/home/daniel/Desktop/MOcounties.csv')
 
+## these two should match:
+
+incomes.NAME10.dtype
+
+incomes.shape
+counties.shape
+
+incomes.NAME10
+
+counties.NAME10
+
+incomes.NAME10 = incomes.NAME10.astype('object')
+counties.NAME10 = counties.NAME10.astype('object')
+
+aa = counties.merge(incomes, on='NAME10', how='left')
+
+aa.shape
+
+## we need to prune this down to size, I think group by county, etc. 
+## tomorrow. 
+
+incomes.X1970 
+
+counties.X1970 ## doesn't have
+
+## I think we really are just using the counties file for it's it 
+## geospatial info
+
+## so we don't need this, we created a geojson with qgis from the 
+## original census data
+
+## so we just need to bind our income data to the d3 selection of the 
+## that would mean hosting this incomes csv somewhere, and binding 
+## on the key of the county names, I guess. 
+
+## were the county names conserved well enough among all the different datasets the to do this?
+
+## can geopandas read urls?:
+
+url="https://raw.githubusercontent.com/danchurch/bayesSpatioTemp/main/dataSets/ch2/MissouriCounties.GeoJSON"
+MOcounties = gpd.read_file(url)
+
+incomes.shape
+
+MOcounties.shape
+
+## awesome. Do the values line up in the Name columns?
+
+MOcounties.NAME.apply(lambda a: print(a))
+
+MOcounties.NAME.apply(lambda a: incomes.NAME10.str.contains(a).any())
+
+## so some reformatting is necessary.
+
+## probably better to do this on the CSV side, it has the more 
+## complex names and would be nice to simplify them for the JS
+
+incomes.NAME10
+
+
+incomes = pd.read_csv('/home/daniel/Documents/learn/spTemp/dataSets/ch2/MOincomes.csv').dropna()
+
+pat = re.compile(', MO')
+incomes.NAME10 = incomes.NAME10.str.replace(pat, '', regex=True)
+
+## did that work?
+
+aa = incomes.NAME10.apply(lambda x: MOcounties.NAME.str.contains(x).any()) 
+
+incomes.NAME10[~aa] ## St. Louis is fucked.
+
+MOcounties
+
+MOcounties.NAME
+
+## ugh, there is a St. Louis county and St. Louis city. 
+
+## make sure these values line up, tomorrow. 
+
+## it's tomorrow today now
+## where were we...
+
+## we need some clean data so we can bind our income data
+## to our paths of the counties of missouri
+
+## so get the two datasets:
+url="https://raw.githubusercontent.com/danchurch/bayesSpatioTemp/main/dataSets/ch2/MissouriCounties.GeoJSON"
+MOcounties = gpd.read_file(url)
+
+incomes = pd.read_csv('/home/daniel/Documents/learn/spTemp/dataSets/ch2/MOincomes.csv').dropna()
+pat = re.compile(', MO')
+incomes.NAME10 = incomes.NAME10.str.replace(pat, '', regex=True)
+
+## why don't we combine them here, it's simpler to do this 
+## in python, I think:
+
+
+aa = incomes.NAME10.apply(lambda x: MOcounties.NAME.str.contains(x).any()) ## st. louis city not matched. fine.
+
+bb = MOcounties.NAME.apply(lambda x: incomes.NAME10.str.contains(x).any()) ## all the geographies have a match in the incomes
+## so use this for the join
+
+
+cc = MOcounties.merge(incomes, on='NAME', how='left')
+
+help(MOcounties.merge)
