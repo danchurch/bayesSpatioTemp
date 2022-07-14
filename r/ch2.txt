@@ -647,6 +647,7 @@ write.csv(BEA, file='/home/daniel/Desktop/MOincomes.csv')
 
 #### go to python ####
 
+import matplotlib.pyplot as plt; plt.ion()
 import pandas as pd
 import geopandas as gpd
 import re
@@ -758,6 +759,78 @@ bb = MOcounties.NAME.apply(lambda x: incomes.NAME10.str.contains(x).any()) ## al
 ## so use this for the join
 
 
-cc = MOcounties.merge(incomes, on='NAME', how='left')
+cc = MOcounties.merge(incomes, left_on='NAME', right_on='NAME10', how='left')
 
-help(MOcounties.merge)
+## did that work?
+
+cc.isnull().any() ## some columns have nan. 
+
+## let's see if they are the ones we care about?
+
+interestingCols = ['NAME', 'geometry', 'X1970', 'X1980', 'X1990']
+
+cc[interestingCols].isnull().any() ## nope. 
+
+## so try this for our dataset for mapping:
+
+countiesGeoInc = MOcounties.merge(incomes, left_on='NAME', right_on='NAME10', how='left')[interestingCols]
+
+countiesGeoInc.head() ## looks okay. 
+
+filt = countiesGeoInc['NAME'] == 'St. Louis'
+countiesGeoInc[filt] ## as noted else where, there are two St. Louis-es
+
+## any other repeats?
+
+
+
+filt = countiesGeoInc['NAME'].duplicated()
+countiesGeoInc[filt] ## as noted else where, there are two St. Louis-es
+
+## are the rows identical?
+countiesGeoInc.duplicated().any()
+
+## nope, so the two St. Louises are slightly different. 
+
+
+countiesGeoInc.plot()
+
+
+plt.close('all')
+
+
+countiesGeoInc.plot()
+filt = countiesGeoInc['NAME'] == 'St. Louis'
+countiesGeoInc[filt].plot(ax=plt.gca(), color='red') ## as noted else where, there are two St. Louis-es
+gpd.GeoSeries(countiesGeoInc.iloc[111].geometry).plot(color='green', ax=plt.gca())
+
+## looks like the smaller one is the "independent city" of St. Louis.
+## but the income data doesn't differentiate between the city and the
+## county, they have the same income values. 
+## I think this could cause problems.
+## so nix the city, for now
+
+countiesGeoInc[filt]
+
+help(countiesGeoInc.drop)
+
+countiesGeoInc.drop(111, axis='index', inplace=True)
+
+## so to repeat, the pipeline for creating this:
+
+url="https://raw.githubusercontent.com/danchurch/bayesSpatioTemp/main/dataSets/ch2/MissouriCounties.GeoJSON"
+MOcounties = gpd.read_file(url)
+incomes = pd.read_csv('/home/daniel/Documents/learn/spTemp/dataSets/ch2/MOincomes.csv').dropna()
+pat = re.compile(', MO')
+incomes.NAME10 = incomes.NAME10.str.replace(pat, '', regex=True)
+interestingCols = ['NAME', 'geometry', 'X1970', 'X1980', 'X1990']
+countiesGeoInc = MOcounties.merge(incomes, left_on='NAME', right_on='NAME10', how='left')[interestingCols]
+countiesGeoInc.drop(111, axis='index', inplace=True)
+
+## export:
+countiesGeoInc.to_file('/home/daniel/Documents/learn/spTemp/dataSets/ch2/countiesGeoInc.GeoJSON')
+
+## looks okay. it still carved out the St. Louis area. 
+## we can do with out it. 
+
+
