@@ -1,6 +1,10 @@
 window.addEventListener("load", main);
 
 function main(){
+d3.csv('https://raw.githubusercontent.com/danchurch/bayesSpatioTemp/main/dataSets/ch2/latitude_hov_heatmapData.csv')
+  .then(function drawHovmuller(data){
+
+  console.log(data);
 
 // sample data:
 
@@ -39,7 +43,7 @@ function main(){
   }
    
   exData.forEach(drawPix)
-}
+})}
 
 // end of main
 
