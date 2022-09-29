@@ -833,4 +833,299 @@ countiesGeoInc.to_file('/home/daniel/Documents/learn/spTemp/dataSets/ch2/countie
 ## looks okay. it still carved out the St. Louis area. 
 ## we can do with out it. 
 
+## action is now in the js files
 
+### fig2.11
+
+## do some data wrangling to get the hovmiller plots going:
+
+## we need a lat by daynumber, with a z value of max temp.
+## do it python, R sucks
+
+
+import matplotlib.pyplot as plt; plt.ion()
+import pandas as pd
+import geopandas as gpd
+import re, os 
+
+os.chdir('/home/daniel/Documents/learn/spTemp/dataSets/ch2')
+stationInfo = pd.read_csv('stationInfo.csv')[['id', 'lat', 'long']]
+stationInfo[['id']] = stationInfo[['id']].astype('int')
+stationInfo.set_index('id', inplace=True)
+times = pd.read_csv('times.csv')[['julian','year','month','day']]
+tmax = pd.read_csv('tmax.csv',index_col=0)
+tdp = pd.read_csv('tdp.csv', index_col=0)
+tmin = pd.read_csv('tmin.csv', index_col=0)
+precip = (pd.read_csv('precip.csv', index_col=0))
+precip.drop(precip.columns[[0]], axis=1, inplace=True )
+tmin = (pd.read_csv('tmin.csv', index_col=0)
+         .drop(tmin.columns[[0]], axis=1))
+
+os.chdir('/home/daniel/Documents/learn/spTemp/r/ch2')
+
+## what do we need here?
+
+## start with longitude:
+
+## they take the range of longitude values,
+## make 25 even steps,
+
+## and they do something similar for the tmax values
+## for days 0-150 days on the y-axis  
+
+stationInfo.head()
+
+## so what do we need to do here? 
+
+## assume that we need a df with each pixel as a row,
+## with columns for day number, latitude, longitude, and max temp. 
+
+## really though, we need two dfs. one with lat and one long
+
+## how to do this...
+
+## each row will then essentially be the station that is 
+## closest station to a given lat or long. 
+
+## so define these first:
+
+##### ! wait! had to clean up stationInfo to just sites with 
+##### data!! see below 
+
+stationInfo.long
+
+list(range( round(stationInfo.long.min()), round(stationInfo.long.max())+1))
+
+xx = pd.Series(range( round(stationInfo.long.min()), round(stationInfo.long.max())+1))
+
+## that is our x value
+## we need to find the stations closest to each
+
+## for one:
+(stationInfo.long - xx[0]).min()
+idxx = (stationInfo.long - xx[0]).idxmin()
+stationInfo.loc[idxx].name
+
+xx = (pd.Series(range( round(stationInfo.long.min()), 
+          round(stationInfo.long.max())+1)))
+
+
+(
+(stationInfo.long - (xx[20])).abs()
+                            .idxmin()
+)
+
+def getNearestStatLong(i):
+    idxx = (stationInfo.long - i).abs().idxmin()
+    return(idxx)
+
+nearestStatLong = xx.apply( getNearestStatLong )
+
+nearestStatLong 
+## works. Later use this to get our desired climate data (max tmp?)
+
+## repeat for latitude 
+yy = (pd.Series(range( round(stationInfo.lat.min()), 
+          round(stationInfo.lat.max())+1)))
+def getNearestStatLat(i):
+    idxy = (stationInfo.lat - i).abs().idxmin()
+    return(idxy)
+
+nearestStatLat = yy.apply( getNearestStatLat )
+## ok
+
+## but we need our max temp. They use the data from the 
+## days between 01 may 1993 and 30 sept 1993
+
+## I think that dataset started on 01.01.1990
+
+## so the above dates probably amount to starting 2 5/12 years
+## later. Then add 150 days. 
+## so this is probably 
+
+( 2 * 356 ) + (5/12)*(356)  ## ~860 days into the data set.
+
+## so let's say rows 860 to 1010
+
+summer1993tmax = tmax.iloc[860:1010]
+## as noted below, there are many columns with no data (-9999)
+## let's remove those here:
+missDatCols = summer1993tmax.apply (lambda x: (x == -9999).all(), axis=0)
+stationsMissingData = missDatCols.index[missDatCols]
+stationsNoMissingData = missDatCols.index[~missDatCols]
+summer1993tmax = summer1993tmax.loc[:,~missDatCols]
+## we also need to clean up the stationInfo object:
+
+stationInfo = stationInfo.loc[stationsNoMissingData.astype('int')]
+
+
+## now regenerate nearestStatL*** variables. God this is confusing
+
+## we can subset this using the stations associataed 
+## with the xx, yy locations found above. But we need to
+## redefine with the new stationInfo object that contains
+## only those stations with tmax data for this period:
+
+importantStats = nearestStatLong.append(nearestStatLat)
+
+
+##### or a month later. So this project goes. 
+
+## so, we have a bunch of missing data
+## I don't really care as long as there is something to work with
+## for a z/pixel value
+
+## but there isn't for some of these
+
+
+summer1993tmax[importantStats.astype('str')]
+
+
+summer1993tmax['14927']
+
+summer1993tmax['14927'].mode() ## -9999
+
+(summer1993tmax['14927'] == -9999).all() ## all -999
+
+for i,j in summer1993tmax.iteritems():
+    print( j.apply( lambda x: (x == -9999)).all())
+
+## subset to those we were hoping to use
+justNearStations = summer1993tmax[importantStats.astype('str')]
+
+## how many of these are missing data?
+for i,j in justNearStations.iteritems():
+    print(i, j.apply( lambda x: (x == -9999)).all())
+## lots
+
+## get some culprits:
+
+missDats = pd.DataFrame(columns=['station','allMissing'])
+for i,j in justNearStations.iteritems():
+    testStation = pd.DataFrame({'station':[i],
+                                'allMissing':[j.apply( lambda x: (x == -9999)).all()],
+                               })
+    missDats = pd.concat([missDats, testStation])
+
+missDats.shape ## 36 rows
+missDats.allMissing.sum() ## 21 stations are missing data. Jeezus
+
+## how do we fill this in?
+
+aa = pd.Series(dtype='int')
+
+
+aa = pd.concat([aa, pd.Series([35])])
+
+aa = pd.concat([aa, pd.Series([35], index=[5])])
+
+## we need to remove all no-data columns and look again
+
+summer1993tmax.shape
+summer1993tmax.head()
+
+summer1993tmax['94910'] ## data present
+summer1993tmax['94911'] ## all data missing
+
+missDatCols = summer1993tmax.apply (lambda x: (x == -9999).all(), axis=0)
+
+missDatCols.sum() ## 195 stations have no data for this time period
+
+stationsMissingData = missDatCols.index[missDatCols]
+## so these should be the stations with data
+summer1993tmaxNoMissing = summer1993tmax.loc[:,~missDatCols]
+
+## is there still missing data?
+(summer1993tmaxNoMissing == -9999).any().any() ## yup
+(summer1993tmaxNoMissing == -9999).any().sum() ## 3 stations
+
+## let's not worry about it. 
+
+## so rerun our station finding pipeline above, after removal 
+## of no data columns/stations
+
+## the above code won't make sense anymore, because I 
+## have removed the -9999 values above, from summer1993tmax
+
+summer1993tmax
+
+(summer1993tmax == -9999).any().sum()  ## looks good
+
+## okay, rerun our nearest-station algorithm again
+
+xx = (pd.Series(range( round(stationInfo.long.min()), 
+          round(stationInfo.long.max())+1)))
+def getNearestStatLong(i):
+    idxx = (stationInfo.long - i).abs().idxmin()
+    return(idxx)
+
+nearestStatLong = xx.apply( getNearestStatLong )
+
+yy = (pd.Series(range( round(stationInfo.lat.min()), 
+          round(stationInfo.lat.max())+1)))
+def getNearestStatLat(i):
+    idxy = (stationInfo.lat - i).abs().idxmin()
+    return(idxy)
+
+nearestStatLat = yy.apply( getNearestStatLat )
+
+## check these. 
+yy[0]
+nearestStatLat[0]
+stationInfo.loc[nearestStatLat[0]]
+
+yy.iloc[-1]
+nearestStatLat.iloc[-1]
+stationInfo.loc[nearestStatLat.iloc[-1]]
+
+xx[0]
+nearestStatLong[0]
+stationInfo.loc[nearestStatLong[0]]
+
+xx.iloc[-1]
+nearestStatLong.iloc[-1]
+stationInfo.long[nearestStatLong.iloc[-1]]
+
+## looks sane.
+
+## okay, so what do we need now?
+## for each long or lat, we need a chronosequence of 
+## 150 days
+
+summer1993tmax.shape
+summer1993tmax.head()
+summer1993tmax.tail()
+
+## should be as simple as selecting stations out of summer1993tmax
+## then re-ordering by lat or long order
+
+## let's work on latitude, as this is the more interesting 
+## figure anyway
+
+nearestStatLat.astype('str')
+
+aa = summer1993tmax[ nearestStatLat.astype('str') ]
+aa.reset_index(inplace=True, drop=True)
+
+## this should be roughly what we need. but we need to 
+## make the units more agreeable to our graphing needs.
+
+## x-axis units simple - days from zero
+
+help(aa.reset_index)
+
+## y-axis units need to be degrees. 
+
+aa.head()
+
+aa.columns
+
+aa.shape
+
+stationInfo
+
+pd.concate yy.astype('str')
+
+aa.columns.astype('int')
+
+stationInfo.loc[aa.columns.astype('int')]
