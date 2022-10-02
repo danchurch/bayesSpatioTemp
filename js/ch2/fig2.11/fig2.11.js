@@ -4,18 +4,18 @@ function main(){
 d3.csv('https://raw.githubusercontent.com/danchurch/bayesSpatioTemp/main/dataSets/ch2/latitude_hov_heatmapData.csv')
   .then(function drawHovmuller(data){
 
-  console.log(data);
 
 // sample data:
 
   exData = [
             {"x":0, "y":0, "z":1},
-            {"x":0, "y":1, "z":2},
-            {"x":1, "y":0, "z":3},
-            {"x":1, "y":1, "z":4},
+            {"x":0, "y":10, "z":2},
+            {"x":10, "y":0, "z":3},
+            {"x":10, "y":10, "z":4},
            ];
   
   console.log(exData);
+  console.log(data);
 
   let cnv = d3.select('#plot')
     .append("canvas")
@@ -34,15 +34,32 @@ d3.csv('https://raw.githubusercontent.com/danchurch/bayesSpatioTemp/main/dataSet
   let zSc = d3.scaleLinear()
     .domain(d3.extent(exData, d => d["x"]))  
     .range(["red","white","blue"]);
+
+  // scale for x
+  let xSc = d3.scaleLinear()
+    .domain(d3.extent(data, d => d["x"]))  
+    .range([0,40]);
  
   // function for drawing a pixel:
   let drawPix = function(obj){
-    console.log(obj.z)
-    ctx.fillStyle = obj["z"];
-    ctx.fillRect(obj["x"], obj["y"], 1, 1);
+    ctx.fillStyle = zSc(obj["z"]);
+    ctx.fillRect(xSc(obj["x"]), obj["y"], 1, 1);
+  }
+
+  let testLoc = function(obj){
+    colVal = zSc(obj["z"]);
+    [x,y] = [ xSc(obj["x"]), obj["y"], 1, 1];
+    console.log(colVal + ' ' + x + ' ' + y);
   }
    
-  exData.forEach(drawPix)
+  //data.forEach(drawPix);
+  //exData.forEach(drawPix);
+
+  exData.forEach(testLoc);
+
+  data.forEach(testLoc);
+
+
 })}
 
 // end of main

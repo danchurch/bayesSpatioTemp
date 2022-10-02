@@ -846,7 +846,7 @@ countiesGeoInc.to_file('/home/daniel/Documents/learn/spTemp/dataSets/ch2/countie
 import matplotlib.pyplot as plt; plt.ion()
 import pandas as pd
 import geopandas as gpd
-import re, os 
+import re, os, json
 
 os.chdir('/home/daniel/Documents/learn/spTemp/dataSets/ch2')
 stationInfo = pd.read_csv('stationInfo.csv')[['id', 'lat', 'long']]
@@ -1104,28 +1104,88 @@ summer1993tmax.tail()
 
 nearestStatLat.astype('str')
 
-aa = summer1993tmax[ nearestStatLat.astype('str') ]
-aa.reset_index(inplace=True, drop=True)
+heatmapData = summer1993tmax[ nearestStatLat.astype('str') ]
+heatmapData.reset_index(inplace=True, drop=True)
 
 ## this should be roughly what we need. but we need to 
 ## make the units more agreeable to our graphing needs.
 
 ## x-axis units simple - days from zero
 
-help(aa.reset_index)
+help(heatmapData.reset_index)
 
 ## y-axis units need to be degrees. 
+## should as simple as relabeling with our yy?
 
-aa.head()
 
-aa.columns
+## but we need this in long form, melted:
 
-aa.shape
 
-stationInfo
+heatmapData.head()
+heatmapData.tail()
 
-pd.concate yy.astype('str')
+heatmapData.melt().head()
+heatmapData.melt().tail()
 
-aa.columns.astype('int')
 
-stationInfo.loc[aa.columns.astype('int')]
+help(heatmapData.melt)
+
+heatMapMelted = heatmapData.melt().reset_index()
+## but this loses the y values?
+
+aa = (heatmapData
+                    .reset_index()
+                    #.melt()
+                    )
+
+heatMapMelted.head()
+
+df.melt(id_vars=['A'], value_vars=['B', 'C'], ignore_index=False)
+
+
+heatmapData.melt(id_vars=['A'], value_vars=['B', 'C']).head()
+
+heatmapData.melt().tail()
+
+
+heatMapMelted.columns = ['y','x','z']
+
+heatMapMelted.head()
+
+heatmapData.head()
+
+
+
+## and this should be our matrix for js, right?
+help(heatmapData.to_csv)
+
+heatMapMelted.to_csv('/home/daniel/Documents/learn/spTemp/dataSets/ch2/latitude_hov_heatmapData.csv', index=False)
+
+## not quite right. we need to retain the y values, how?
+
+heatmapData
+
+(
+heatmapData
+  .reset_index()
+  .rename({'index':'y'}, axis='columns')
+  .melt()
+  .head()
+)
+
+help(heatmapData)
+
+help(heatmapData.rename)
+
+heatmapData.head()
+
+heatMapMelted.head()
+
+df = pd.DataFrame({'A': {0: 'a', 1: 'b', 2: 'c'},
+                   'B': {0: 1, 1: 3, 2: 5},
+                   'C': {0: 2, 1: 4, 2: 6}})
+
+df.melt(id_vars=['A'], value_vars=['B', 'C'], ignore_index=False)
+
+df.melt(id_vars=['A'], value_vars=['B', 'C'])
+
