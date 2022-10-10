@@ -1189,3 +1189,78 @@ df.melt(id_vars=['A'], value_vars=['B', 'C'], ignore_index=False)
 
 df.melt(id_vars=['A'], value_vars=['B', 'C'])
 
+######## lab 2.3 #########
+
+## now to actually crunch some numbers (exploratory analysis)
+
+## they use essentially the data set we just generated, I think...
+
+## the first statistics are spatial "empirical" means.
+## spatial empirical means are means where samples from 
+## different times have been averaged out. 
+
+## leaves a map, with each pixel/z-value being an average across
+## times.
+
+#### empirical spatial means ####
+
+## we need to group our max temps from the dataset above 
+## by unique lat-long combinations and get the vector of 
+## maxTemp values at each day for each  
+
+## we didn't retain the dates for each value in our 
+## long-form matrix from above. 
+
+## for spatial means, I guess it doesn't matter,
+## unless for some reason you would want to unequally
+## weight the dates.
+
+## we will probably need to fix this for the temporal 
+## means...to get something like figure 2.15
+
+## let's try to build at least the day number (day 0-150)
+## back into the data. We can play with dates some other 
+## time, this is unnecessary complexity right now.
+
+## also, we want to include all stations, whereas before 
+## we just took the station nearest to each whole lat/long point
+
+import matplotlib.pyplot as plt; plt.ion()
+import pandas as pd
+##import geopandas as gpd
+
+## get data, clean up 
+folder='/home/daniel/Documents/learn/spTemp/dataSets/ch2/'
+stationInfo = pd.read_csv(folder+'stationInfo.csv')[['id', 'lat', 'long']]
+stationInfo[['id']] = stationInfo[['id']].astype('int')
+stationInfo.set_index('id', inplace=True)
+tmax = pd.read_csv((folder+'tmax.csv'),index_col=0)
+## subset to just the summer of 1993
+summer1993tmax = tmax.iloc[860:1010]
+## remove columns with no data (-9999)
+## let's remove those here:
+missDatCols = summer1993tmax.apply (lambda x: (x == -9999).all(), axis=0)
+summer1993tmax = summer1993tmax.loc[:,~missDatCols]
+stationInfo = stationInfo.loc[~(missDatCols.values),:]
+
+## rather than grouping by location, we should be able to group by
+## station. Each station needs the average of its max temp column
+
+
+aa = summer1993tmax.mean(axis='rows')
+aa.index = aa.index.astype('int64')
+aa.name = "meanSummerTmax"
+geoMeanTmax = (pd.concat([stationInfo, aa], axis=1)
+    .reset_index()
+    .rename(columns={'index':'statID'})
+     )
+
+
+## now we want an array of objects.
+## each object has station id, lat, and long
+
+geoMeanTmax.head()
+
+geoMeanTmax.to_csv("/home/daniel/Documents/learn/spTemp/dataSets/ch2/geoMeanTmax.csv",
+                        index=False)
+
