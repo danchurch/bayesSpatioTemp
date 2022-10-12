@@ -5,6 +5,7 @@ function main(){
   d3.csv(url, d3.autoType)
     .then(function drawHovmuller(data){
   
+    console.log(data);
     let [cWidth, cHeight] = [100,100];
   
     let cnv = d3.select('#plot')
