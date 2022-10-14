@@ -1264,3 +1264,24 @@ geoMeanTmax.head()
 geoMeanTmax.to_csv("/home/daniel/Documents/learn/spTemp/dataSets/ch2/geoMeanTmax.csv",
                         index=False)
 
+## something is weird, we have three data points under 
+## 20 degrees. 
+
+geoMeanTmax = pd.read_csv("/home/daniel/Documents/learn/spTemp/dataSets/ch2/geoMeanTmax.csv")
+
+geoMeanTmax['meanSummerTmax'].min()
+
+lowTempFilter = geoMeanTmax['meanSummerTmax'] < 20
+
+lowTempFilter = geoMeanTmax['meanSummerTmax'] < 40
+
+geoMeanTmax['meanSummerTmax'][lowTempFilter]
+
+## let's get rid of these 
+
+geoMeanTmax = geoMeanTmax[~lowTempFilter]
+
+geoMeanTmax.to_csv("/home/daniel/Documents/learn/spTemp/dataSets/ch2/geoMeanTmax.csv",
+                        index=False)
+
+
