@@ -1244,7 +1244,7 @@ summer1993tmax = summer1993tmax.loc[:,~missDatCols]
 stationInfo = stationInfo.loc[~(missDatCols.values),:]
 
 ## rather than grouping by location, we should be able to group by
-## station. Each station needs the average of its max temp column
+## statin. Each station needs the average of its max temp column
 
 
 aa = summer1993tmax.mean(axis='rows')
@@ -1284,4 +1284,80 @@ geoMeanTmax = geoMeanTmax[~lowTempFilter]
 geoMeanTmax.to_csv("/home/daniel/Documents/learn/spTemp/dataSets/ch2/geoMeanTmax.csv",
                         index=False)
 
+######## fig2.15 / temporal averages ###########
 
+## now we need the same process, but with space averaged out.
+## we also want the curves for each station, as
+## an indicator of uncertainty, in the graphic
+
+## we want the same set of dates, summer 1993
+## so ...
+
+python3
+
+import pandas as pd
+
+## get data, clean up 
+
+## station locations
+folder='/home/daniel/Documents/learn/spTemp/dataSets/ch2/'
+stationInfo = pd.read_csv(folder+'stationInfo.csv')[['id', 'lat', 'long']]
+stationInfo[['id']] = stationInfo[['id']].astype('int')
+stationInfo.set_index('id', inplace=True)
+## temperature data
+tmax = pd.read_csv((folder+'tmax.csv'),index_col=0)
+## subset to just the summer of 1993
+summer1993tmax = tmax.iloc[860:1010]
+## remove columns with no data (-9999)
+## let's remove those here:
+missDatCols = summer1993tmax.apply (lambda x: (x == -9999).all(), axis=0)
+summer1993tmax = summer1993tmax.loc[:,~missDatCols]
+stationInfo = stationInfo.loc[~(missDatCols.values),:]
+## that leaves some single -9999 values, convert to na
+summer1993tmax[summer1993tmax == -9999] = None
+## we want a curve that travels the mean of 
+## each date across all stations.
+grandTmaxMean = summer1993tmax.mean(axis='columns')
+grandTmaxMean.index = grandTmaxMean.index.astype('int64')
+
+grandTmaxMean
+
+## for ease of export I guess we can combine these into one csv:
+#summer1993tmax ['grandMean'] = grandTmaxMean
+## but we will have to separate those again, and it will be a 
+## pain in js. 
+
+## can we save out grandTmaxMean as a json?
+
+grandTmaxMean.index.name = 'day'
+grandTmaxMean.name = 'tmaxMean'
+dataDir="/home/daniel/Documents/learn/spTemp/dataSets/ch2/"
+grandTmaxMean.to_csv(dataDir+'grandTmaxMean.csv')
+
+## looks okay.
+
+## while we are here, try the larger dataset as a csv:
+
+
+aa = summer1993tmax.transpose()
+
+summer1993tmax.head()
+stationInfo.head()
+
+aa.head()
+
+summer1993tmax.to_csv("/home/daniel/Documents/learn/spTemp/dataSets/ch2/summer1993tmax.csv",
+                        index=False)
+
+
+
+
+
+tempMeanTmax = (pd.concat([stationInfo, grandTmaxMean], axis=0)
+    .reset_index()
+    .rename(columns={'index':'statID'})
+     )
+
+tempMeanTmax.head()
+
+tempMeanTmax.tail()
