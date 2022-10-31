@@ -1296,9 +1296,7 @@ geoMeanTmax.to_csv("/home/daniel/Documents/learn/spTemp/dataSets/ch2/geoMeanTmax
 python3
 
 import pandas as pd
-
 ## get data, clean up 
-
 ## station locations
 folder='/home/daniel/Documents/learn/spTemp/dataSets/ch2/'
 stationInfo = pd.read_csv(folder+'stationInfo.csv')[['id', 'lat', 'long']]
@@ -1319,6 +1317,8 @@ summer1993tmax[summer1993tmax == -9999] = None
 ## each date across all stations.
 grandTmaxMean = summer1993tmax.mean(axis='columns')
 grandTmaxMean.index = grandTmaxMean.index.astype('int64')
+grandTmaxMean.index.name = 'day'
+grandTmaxMean.name = 'temp'
 
 grandTmaxMean
 
@@ -1328,30 +1328,36 @@ grandTmaxMean
 ## pain in js. 
 
 ## can we save out grandTmaxMean as a json?
+## meh. goes on the wrong axis, hurts my head
 
-grandTmaxMean.index.name = 'day'
-grandTmaxMean.name = 'tmaxMean'
 dataDir="/home/daniel/Documents/learn/spTemp/dataSets/ch2/"
+
 grandTmaxMean.to_csv(dataDir+'grandTmaxMean.csv')
 
-## looks okay.
+grandTmaxMean.head()
 
+
+## looks okay.
 ## while we are here, try the larger dataset as a csv:
 
+grandTmaxMean.head()
+
+summer1993tmax.head()
+
+## looks like we want to transpose, so we can 
+## create an array of station objects:
 
 aa = summer1993tmax.transpose()
 
-summer1993tmax.head()
-stationInfo.head()
+aa.iloc[0:5,0:5]
 
-aa.head()
+aa.index
 
-summer1993tmax.to_csv("/home/daniel/Documents/learn/spTemp/dataSets/ch2/summer1993tmax.csv",
+summer1993tmax.transpose().to_csv("/home/daniel/Documents/learn/spTemp/dataSets/ch2/summer1993tmax.csv",
                         index=False)
 
-
-
-
+##summer1993tmax.to_csv("/home/daniel/Documents/learn/spTemp/dataSets/ch2/summer1993tmax.csv",
+##                        index=False)
 
 tempMeanTmax = (pd.concat([stationInfo, grandTmaxMean], axis=0)
     .reset_index()
@@ -1361,3 +1367,6 @@ tempMeanTmax = (pd.concat([stationInfo, grandTmaxMean], axis=0)
 tempMeanTmax.head()
 
 tempMeanTmax.tail()
+
+## okay, now we need all the other station curves:
+
