@@ -1368,5 +1368,131 @@ tempMeanTmax.head()
 
 tempMeanTmax.tail()
 
-## okay, now we need all the other station curves:
+###### fig 2.16 #####
 
+## now a figure to show spatial covariance
+## the point with spatiotemporal statistics
+## is to make clear the explicitly spatial 
+## and temperal dependencies in a model. 
+## This means that when the authors can, they 
+## often detrend simple ecological predictors 
+## (that are the entire basis of other modeling
+## efforts), then examine the residuals for 
+## spatial patterns. For classical ecologists,
+## this can seem a little backwards. 
+
+## it is easy to forget this when trying to 
+## understand their equations.
+
+## anyway, as a first step, they detrend, which
+## often looks like building an ecological
+## linear model, without taking space/time into
+## account. 
+
+## the data needed here are similar to 
+## above, May 1, 1993 to Sept 30, 1993, max
+## temperature.
+
+## since it is seasonal data, it is necessary to 
+## detrend the seasonal effect, which is a function
+## of our calendar day. If we were doing all year,
+## we would need some sort of periodic function.
+## But we're just dealing with a half-year period,
+## so they use a parabolic function of day. 
+
+## I think for this we well need to write a function 
+## for finding the spatiotemporal variance, with 
+## spatial and temporal lag as parameters.
+
+## If we want to recreate figure 2.16, we are 
+## going to look at the spatiotemporal covariance
+## of latitudes: how much does the temperature at
+## stations in one east-west strip vary with the  
+## stations of stations in another east-west zone?
+
+## before any binning, I guess we need to detrend seasonality.
+## and calculate a covariance matrix. Then do binning. 
+
+import sklearn
+
+## why is this not importing? We have it installed... 
+pip3 install -U scikit-learn
+## -U == upgrade strategy
+## that worked...
+
+import pandas as pd
+import matplotlib.pyplot as plt; plt.ion()
+import geopandas as gpd
+from sklearn import linear_model
+from sklearn.preprocessing import PolynomialFeatures
+
+## test
+reg = linear_model.LinearRegression()
+reg.fit([[0, 0], [1, 1], [2, 2]], [0, 1, 2])
+## yeah great. 
+
+## where is our data again? repeat above cleaning steps
+
+folder='/home/daniel/Documents/learn/spTemp/dataSets/ch2/'
+stationInfo = pd.read_csv(folder+'stationInfo.csv')[['id', 'lat', 'long']]
+stationInfo[['id']] = stationInfo[['id']].astype('int')
+stationInfo.set_index('id', inplace=True)
+## temperature data
+tmax = pd.read_csv((folder+'tmax.csv'),index_col=0)
+## subset to just the summer of 1993
+summer1993tmax = tmax.iloc[860:1010]
+## remove columns with no data (-9999)
+## let's remove those here:
+missDatCols = summer1993tmax.apply (lambda x: (x == -9999).all(), axis=0)
+summer1993tmax = summer1993tmax.loc[:,~missDatCols]
+stationInfo = stationInfo.loc[~(missDatCols.values),:]
+## that leaves some single -9999 values, convert to na
+summer1993tmax[summer1993tmax == -9999] = None
+summer1993tmax.head()
+
+## we need to detrend effects of time of year. 
+## so we want the max daily 
+## temp from all of our sites, for the summer of 1993
+## we need three columns, date, temperature, station id 
+## to keep things straight so we can map location back 
+## onto these residuals.
+
+## back to melting things. This always hurts my head.
+
+summer1993tmax
+
+aa = (summer1993tmax
+        .reset_index()
+        .rename({'index':'day'}, axis='columns'))
+
+
+bb = (pd.melt(aa, id_vars=['day'])
+        .rename({'variable':'station'}, axis='columns')
+        .rename({'value':'temp'}, axis='columns'))
+
+
+
+x = bb.day
+y = bb.temp
+y.isna().any() ## yup some NaNs in there
+y[y.isna()] ## got to remove these...
+x = x[~y.isna()]
+y.dropna(inplace=True)
+Y = y.to_numpy()
+X = x.to_numpy().reshape(-1,1)
+
+
+poly = PolynomialFeatures(degree=2, include_bias=False)
+X_poly=poly.fit_transform(X)
+poly.fit(X_poly,Y)
+lin_reg2 = linear_model.LinearRegression()
+lin_reg2.fit(X_poly,y)
+
+plt.close('all')
+fig,ax = plt.subplots(1,1)
+ax.plot(X,Y, 'ro')
+ax.plot(X,lin_reg2.predict(poly.fit_transform(X)),color='blue')
+
+## now, how to fit 2d polynomial and get residuals...
+
+reg.coef_
