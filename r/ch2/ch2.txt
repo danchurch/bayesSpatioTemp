@@ -1446,6 +1446,7 @@ summer1993tmax = tmax.iloc[860:1010]
 missDatCols = summer1993tmax.apply (lambda x: (x == -9999).all(), axis=0)
 summer1993tmax = summer1993tmax.loc[:,~missDatCols]
 stationInfo = stationInfo.loc[~(missDatCols.values),:]
+
 ## that leaves some single -9999 values, convert to na
 summer1993tmax[summer1993tmax == -9999] = None
 summer1993tmax.head()
@@ -1464,14 +1465,11 @@ summer1993tmax
 aa = (summer1993tmax
         .reset_index()
         .rename({'index':'day'}, axis='columns'))
-
-
 bb = (pd.melt(aa, id_vars=['day'])
         .rename({'variable':'station'}, axis='columns')
         .rename({'value':'temp'}, axis='columns'))
-
-
-
+## think we need to sort the days, for good graphing...
+bb.sort_values(by="day", axis="index", inplace=True)
 x = bb.day
 y = bb.temp
 y.isna().any() ## yup some NaNs in there
@@ -1480,19 +1478,43 @@ x = x[~y.isna()]
 y.dropna(inplace=True)
 Y = y.to_numpy()
 X = x.to_numpy().reshape(-1,1)
-
-
+## build model
 poly = PolynomialFeatures(degree=2, include_bias=False)
 X_poly=poly.fit_transform(X)
 poly.fit(X_poly,Y)
 lin_reg2 = linear_model.LinearRegression()
 lin_reg2.fit(X_poly,y)
+linPredict = lin_reg2.predict(poly.fit_transform(X))
 
+
+## look at it:
 plt.close('all')
 fig,ax = plt.subplots(1,1)
 ax.plot(X,Y, 'ro')
-ax.plot(X,lin_reg2.predict(poly.fit_transform(X)),color='blue')
+ax.plot(X,linPredict,
+            color='blue',
+            linewidth=2,)
+
+## much better.
 
 ## now, how to fit 2d polynomial and get residuals...
 
-reg.coef_
+dir(lin_reg2)
+
+## no baked in way to get residuals?:
+
+resids = Y - linPredict 
+
+## we need to re-attach location data to each of these 
+## residuals...
+
+bb.iloc[0:4,0:5]
+
+bb.head()
+
+stationInfo.head()
+
+bb.dtypes
+
+stationInfo.dtypes
+
