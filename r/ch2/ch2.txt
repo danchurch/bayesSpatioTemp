@@ -1426,11 +1426,6 @@ import geopandas as gpd
 from sklearn import linear_model
 from sklearn.preprocessing import PolynomialFeatures
 
-## test
-reg = linear_model.LinearRegression()
-reg.fit([[0, 0], [1, 1], [2, 2]], [0, 1, 2])
-## yeah great. 
-
 ## where is our data again? repeat above cleaning steps
 
 folder='/home/daniel/Documents/learn/spTemp/dataSets/ch2/'
@@ -1446,7 +1441,6 @@ summer1993tmax = tmax.iloc[860:1010]
 missDatCols = summer1993tmax.apply (lambda x: (x == -9999).all(), axis=0)
 summer1993tmax = summer1993tmax.loc[:,~missDatCols]
 stationInfo = stationInfo.loc[~(missDatCols.values),:]
-
 ## that leaves some single -9999 values, convert to na
 summer1993tmax[summer1993tmax == -9999] = None
 summer1993tmax.head()
@@ -1467,15 +1461,16 @@ aa = (summer1993tmax
         .rename({'index':'day'}, axis='columns'))
 bb = (pd.melt(aa, id_vars=['day'])
         .rename({'variable':'station'}, axis='columns')
-        .rename({'value':'temp'}, axis='columns'))
+        .rename({'value':'temp'}, axis='columns')
+        )
 ## think we need to sort the days, for good graphing...
-bb.sort_values(by="day", axis="index", inplace=True)
+bb = (bb.sort_values(by="day", axis="index")
+        .reset_index(drop=True))
+bb['station'] = bb['station'].astype('string')
+## think we also need to remove any NaNs, these are causing problems
+bb = bb[~bb.temp.isna()]
 x = bb.day
 y = bb.temp
-y.isna().any() ## yup some NaNs in there
-y[y.isna()] ## got to remove these...
-x = x[~y.isna()]
-y.dropna(inplace=True)
 Y = y.to_numpy()
 X = x.to_numpy().reshape(-1,1)
 ## build model
@@ -1485,6 +1480,8 @@ poly.fit(X_poly,Y)
 lin_reg2 = linear_model.LinearRegression()
 lin_reg2.fit(X_poly,y)
 linPredict = lin_reg2.predict(poly.fit_transform(X))
+## no baked in way to get residuals?:
+resids = Y - linPredict 
 
 
 ## look at it:
@@ -1497,24 +1494,103 @@ ax.plot(X,linPredict,
 
 ## much better.
 
-## now, how to fit 2d polynomial and get residuals...
-
-dir(lin_reg2)
-
-## no baked in way to get residuals?:
-
-resids = Y - linPredict 
-
 ## we need to re-attach location data to each of these 
 ## residuals...
 
-bb.iloc[0:4,0:5]
-
 bb.head()
-
 stationInfo.head()
 
-bb.dtypes
 
-stationInfo.dtypes
+aa = (stationInfo
+.reset_index()
+.rename(columns = {'id':'station'})
+)
+aa['station'] = aa['station'].astype('string')
+cc = bb.merge(aa, left_on='station', right_on='station')
+cc['resids'] = resids
 
+## spatial covariance plots check correlations among 
+## all spatial indices. In fig. 2.16 latitudes are combined,
+## and each latitude is checked for covariances with other 
+## latitudes. Each of these covariance checks is done a 
+## particular temporal "lag". The lag can be zero. 
+
+## so, we need the ability to create columns or rows of 
+## the detrended max temp data, 
+
+## let's start with a lag time of zero. In this case, 
+## we want to compare the column of the of the mean
+## max temp for each day for a given latitude. 
+
+## so we need to box stations by single latitude bins.    
+
+cc['nearestLat'] = cc.lat.round().astype('int')
+
+## for lag zero, we don't need to mess with the day information.
+## we just use the detrended temp data, binned by lat, 
+
+## we need a matrix where columns are latitudes, rows are the avg resid
+## for that latitude.
+
+zeroLagGroups = cc.groupby('nearestLat')
+
+cc[['station','nearestLat','resids']].groupby('nearestLat').mean().head()
+
+zeroLagGroups
+
+## ugh, brain hurts. For one cell of our desired matrix:
+## for latitude 39, the average detrended max temp for days 860 is:
+
+cc.query('day == 860 and nearestLat == 39')['resids'].mean()
+
+## so something like:
+def getResid(d, nL):
+    return(cc.query(f'day == {d} and nearestLat == {nL}')['resids'].mean())
+
+d, nL = 860, 39
+## either of these work:
+cc.query('day == @d and nearestLat == @nL')['resids'].mean() ## neat, but kind of limited
+lat39day860 = cc.query(f'day == {d} and nearestLat == {nL}')['resids'].mean()
+## or using our function:
+getResid(d, nL)
+
+## and for latitude 39, day 861 this is:
+d, nL = 861, 39
+getResid(d, nL)
+
+## great, so what now we need to build a column for each of the 15 latitudes
+## where days are rows...
+
+## one column, lat=39, looks like this:
+
+latsSorted = cc['nearestLat'].unique()
+latsSorted.sort()
+daysSorted = cc['day'].unique()
+daysSorted.sort()
+
+aa = []
+for j in latsSorted:  
+    aa.append(
+      [ getResid(i,j) for i in daysSorted ])
+
+lagZeroMatrix = (pd.DataFrame(aa, 
+                  index=latsSorted, 
+                  columns=daysSorted)
+                    .transpose())
+
+
+lagZeroMatrix.head()
+lagZeroMatrix.tail()
+
+
+## just checking, accord to this, at lat=40, the avg resid at day 1009 is -0.601976
+## does our function agree?
+
+getResid(1009, 40) ## yup. okay, sanity checked (hah!)
+
+## great - now we need a covariance matrix:
+lagZeroCovMat = lagZeroMatrix.cov()
+
+## so port this over to d3js and make a heatmap.
+
+## then try to make a lag > 0 map, in the same way.
