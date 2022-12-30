@@ -1591,6 +1591,37 @@ getResid(1009, 40) ## yup. okay, sanity checked (hah!)
 ## great - now we need a covariance matrix:
 lagZeroCovMat = lagZeroMatrix.cov()
 
-## so port this over to d3js and make a heatmap.
+## this is our lag zero cov matrix
+## but we need to reshape this to some sort of 
+## x, y, z format - three columns
 
-## then try to make a lag > 0 map, in the same way.
+## so, how to do this...
+
+dataDir='/home/daniel/Documents/learn/spTemp/dataSets/ch2/'
+
+lagZeroCovMat.to_csv((dataDir+'lagZeroCovMat.csv'), index=False)
+
+lagZeroCovMat = pd.read_csv(dataDir+'lagZeroCovMat.csv')
+
+
+lagZeroCovMat.head()
+
+lagZeroHeatMap = lagZeroCovMat.melt(id_vars="lat")
+lagZeroHeatMap.columns = ['x','y','z']
+lagZeroHeatMap.head()
+
+#lagZeroHeatMap.to_csv('/home/daniel/Documents/learn/spTemp/dataSets/ch2/lagZeroHeatMap.csv', index=False)
+
+## running that through d3js, looks fine. But doesn't look like the book...hmmm
+
+## I think their binning is much finer than ours. 
+## really, I should rebin, build a scale bar, and tile the figure
+## to include different comparisons (lag 1, lag 2, etc).
+
+## but good god, I think I get the concept.
+## if we ever teach this, we can maybe dive a litter 
+## deeper. 
+## Probably not. I don't think this is that important, except
+## maybe to understand next steps.
+
+## let's move on to semivariograms. 
