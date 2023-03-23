@@ -155,6 +155,7 @@ stationInfo = (pd.read_csv(ddir+'Stationinfo.dat', header=None)
 stationInfo.columns=['id','lat','long']
 stationInfo['id'] = stationInfo['id'].astype('int')
 ## data
+
 ## so now temp data?
 times = (pd.read_csv(ddir+'Times_1990.dat', header=None)
                 .iloc[:,0]
@@ -163,14 +164,18 @@ times = (pd.read_csv(ddir+'Times_1990.dat', header=None)
 times.columns = ['julian','year', 'month', 'day']
 ## this could be useful later
 pd.to_datetime(times[['year', 'month', 'day']])
+
 ## weather data is in a couple different tables:
 ## temp max
+
 tmax = (pd.read_csv(ddir+'Tmax_1990.dat', header=None)
                 .iloc[:,0]
                 .str.split(expand=True)
                 .astype('int32')
     )
+
 tmax.columns = stationInfo['id']
+
 ## temp min
 tmin = (pd.read_csv(ddir+'Tmin_1990.dat', header=None)
                 .iloc[:,0]
@@ -1427,16 +1432,17 @@ from sklearn import linear_model
 from sklearn.preprocessing import PolynomialFeatures
 
 ## where is our data again? repeat above cleaning steps
-
 folder='/home/daniel/Documents/learn/spTemp/dataSets/ch2/'
 stationInfo = pd.read_csv(folder+'stationInfo.csv')[['id', 'lat', 'long']]
 stationInfo[['id']] = stationInfo[['id']].astype('int')
 stationInfo.set_index('id', inplace=True)
+
 ## temperature data
 tmax = pd.read_csv((folder+'tmax.csv'),index_col=0)
 ## subset to just the summer of 1993
 summer1993tmax = tmax.iloc[860:1010]
 ## remove columns with no data (-9999)
+
 ## let's remove those here:
 missDatCols = summer1993tmax.apply (lambda x: (x == -9999).all(), axis=0)
 summer1993tmax = summer1993tmax.loc[:,~missDatCols]
@@ -1619,9 +1625,327 @@ lagZeroHeatMap.head()
 ## to include different comparisons (lag 1, lag 2, etc).
 
 ## but good god, I think I get the concept.
-## if we ever teach this, we can maybe dive a litter 
+## if we ever teach this, we can maybe dive a little
 ## deeper. 
 ## Probably not. I don't think this is that important, except
 ## maybe to understand next steps.
 
 ## let's move on to semivariograms. 
+
+#### fig2.17 ####
+
+## fig2.17 is a spatio-temporal semivariogram
+## it uses tmax data just from July 2003
+
+## semi-variograms essentially check the mean variance
+## of a response variable of interest (Z) among all points
+## in space and time with a given bin-size. Such variation 
+## increases with greater space and/or time due to the 
+## autocorrelation we usually see in nature. 
+
+## spatio-temporal semi-variograms require a heat-map
+## type graphic, since they are at least 3-d (distance +
+## time + Z var).
+
+## first we need the data, the NOAA data for just july 2003
+
+
+import pandas as pd
+import matplotlib.pyplot as plt; plt.ion()
+import geopandas as gpd
+
+folder='/home/daniel/Documents/learn/spTemp/dataSets/ch2/'
+## station location data
+stationInfo = pd.read_csv(folder+'stationInfo.csv')[['id', 'lat', 'long']]
+stationInfo[['id']] = stationInfo[['id']].astype('int')
+stationInfo.set_index('id', inplace=True)
+## temperature data
+tmax = pd.read_csv((folder+'tmax.csv'),index_col=0)
+## july would be, what? 
+## we have to get back to the raw data
+ddir = "/usr/local/lib/R/site-library/STRbook/extdata/"
+times = (pd.read_csv(ddir+'Times_1990.dat', header=None)
+                .iloc[:,0]
+                .str.split(expand=True)
+    )
+times.columns = ['julian','year', 'month', 'day']
+pd.to_datetime(times[['year', 'month', 'day']])
+## subset to just the july of 1993
+aa = times.query('year == "1993" and month == "7"').index
+july1993tmax = tmax.loc[aa]
+july1993tmax.shape
+## remove columns with no data (-9999)
+## let's remove those here:
+missDatCols = july1993tmax.apply (lambda x: (x == -9999).all(), axis=0)
+july1993tmax = july1993tmax.loc[:,~missDatCols]
+july1993tmax.shape
+july1993tmax.head()
+stationInfo.head()
+stationInfo = stationInfo.loc[~(missDatCols.values),:]
+## that leaves some single -9999 values, convert to na
+july1993tmax[july1993tmax == -9999] = None
+stationInfo.reset_index(drop=False, inplace=True)
+stationInfo.rename({"id":"station"}, inplace=True, axis="columns")
+stationInfo['station'] = stationInfo['station'].astype('string')
+
+## that should work...
+## our function is probably here:
+
+https://scikit-gstat.readthedocs.io/en/latest/reference/spacetimevariogram.html#skgstat.SpaceTimeVariogram
+
+## maybe we can work through some of the tutorials here:
+https://scikit-gstat.readthedocs.io/en/latest/auto_examples/tutorial_01_getting_started.html#sphx-glr-auto-examples-tutorial-01-getting-started-py
+
+july1993tmax.iloc[0:5,0:5]
+
+## so, what do we do here?  
+
+## so for our data it looks like we need a classic x,y,z graph
+## in our case, this would be the x,y of each station, the time, and the 
+## daily tmax 
+
+## we need the spacetimevariogram object, I think. 
+skg.SpaceTimeVariogram(coordinates, values, 
+    xdist_func='euclidean', 
+    tdist_func='euclidean',
+    x_lags=10,
+    t_lags='max',
+    maxlag=None,
+    xbins='even',
+    tbins='even',
+    estimator='matheron',
+    use_nugget=False,
+    model='product-sum',
+    verbose=False)
+
+help(skg.SpaceTimeVariogram)
+
+## not sure how to get there...no tutorial for spacetime analysis
+## looks like we start with x,y,z as always. 
+## but what about time?
+## not sure, but to make x,y,z for each time, we need 4 columns
+## x,y,d,z
+
+aa = (july1993tmax
+        .reset_index()
+        .rename({'index':'day'}, axis='columns'))
+bb = (pd.melt(aa, id_vars=['day'])
+        .rename({'variable':'station'}, axis='columns')
+        .rename({'value':'temp'}, axis='columns'))
+
+## now can we sub out the station number for x/y coordinates?
+
+spTimeLong = bb.merge(stationInfo, left_on='station', right_on='station')
+
+spTimeLong.head()
+
+## okay, but is this actually what we need?
+## I give up. Let's dive into a tutorial for GStat
+
+## maybe we can work through some of the tutorials here:
+https://scikit-gstat.readthedocs.io/en/latest/auto_examples/tutorial_01_getting_started.html#sphx-glr-auto-examples-tutorial-01-getting-started-py
+
+## the "semivariance" 
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from pprint import pprint
+import warnings
+#warnings.filterwarnings("ignore")
+import skgstat as skg
+
+## 
+src = skg.data.meuse()
+print(src.get('origin'))
+coords, vals = src.get('sample')
+
+# make a nice table
+pd.DataFrame({'x': coords[:, 0], 'y': coords[:, 1], 'lead': vals.flatten()}).head()
+
+plt.close('all')
+
+fig, ax = plt.subplots(1, 1, figsize=(9, 9))
+art = ax.scatter(coords[:, 0], coords[:, 1], s=50, c=vals.flatten(), cmap='plasma')
+plt.colorbar(art)
+
+V = skg.Variogram(coords, vals.flatten(), maxlag='median', n_lags=15, normalize=False)
+fig = V.plot(show=False)
+
+## can we do this with our data? For the first day?
+
+day1 = spTimeLong.query('day == 1277')[['temp', 'lat', 'long']]
+
+plt.close('all')
+fig, ax = plt.subplots(1, 1, figsize=(9, 9))
+art = ax.scatter(day1["long"], day1["lat"], 
+    s=50, 
+    c=day1["temp"], 
+    cmap='plasma')
+plt.colorbar(art)
+
+help(skg.Variogram) 
+
+myCoords = day1[["long","lat"]]
+
+z = day1[["temp"]].to_numpy().flatten()
+
+V = skg.Variogram(myCoords, 
+                  z, 
+                  maxlag='median', 
+                  ##n_lags=15, 
+                  n_lags=30, 
+                  normalize=False)
+fig = V.plot(show=False)
+
+# that works. what about a heat map of space time?
+SpaceTimeVariogram
+
+## we need the spacetimevariogram object, I think. 
+skg.SpaceTimeVariogram(myCoords, z, 
+    xdist_func='euclidean', 
+    tdist_func='euclidean',
+    x_lags=10,
+    t_lags='max',
+    xbins='even',
+    tbins='even',
+    estimator='matheron',
+    use_nugget=False,
+    model='product-sum',
+    verbose=False)
+
+## but the authors offer absolutely no support here
+## and I cannot get any clues about how to incorporate
+## time information
+## and I see no plotting builtin
+## maybe these: 
+skg.SpaceTimeVariogram._plot2d
+skg.SpaceTimeVariogram._plot3d
+
+help(skg.SpaceTimeVariogram._plot2d)
+
+skg.SpaceTimeVariogram(coordinates, values, 
+    xdist_func='euclidean', 
+    tdist_func='euclidean',
+    x_lags=10,
+    t_lags='max',
+    maxlag=None,
+    xbins='even',
+    tbins='even',
+    estimator='matheron',
+    use_nugget=False,
+    model='product-sum',
+    verbose=False)
+
+dir(skg.SpaceTimeVariogram)
+
+V = skg.SpaceTimeVariogram(myCoords, 
+                           z, 
+                           maxlag='median', 
+                           x_lags=30, 
+                           normalize=False)
+
+## can we wrap our own here? As in, make a semivariance function 
+## and binning functions?
+
+## ugh. that doesn't sound like fun. 
+
+## maybe some of the above distance only function could be salvaged...
+## this shows semivariance values for the different distance lags:
+
+V = skg.Variogram(myCoords, 
+                  z, 
+                  maxlag='median', 
+                  ##n_lags=15, 
+                  n_lags=30, 
+                  normalize=False)
+fig = V.plot(show=False)
+
+## I think our data found here:
+## bin size:
+V.bins
+## calculated semivariance 
+V.experimental
+
+V.bins.shape
+V.experimental.shape
+
+fig, ax = plt.subplots(1, 1, figsize=(9, 9))
+art = ax.scatter(V.bins, V.experimental)
+
+## theoretically we can create a function out of this, 
+## and loop through all time lags?
+
+## for instance, time lag 1 day, all spatial distances
+## I think this means that 
+
+spTimeLong.head()
+
+day1 = spTimeLong.query('day == 1277')[['temp', 'lat', 'long']]
+
+tlag=1
+
+V = skg.Variogram(myCoords, 
+                  z, 
+                  maxlag='median', 
+                  ##n_lags=15, 
+                  n_lags=30, 
+                  normalize=False)
+
+fig = V.plot(show=False)
+
+#### figure 2.20 ####
+
+## okay, so now we need to learn about EOFs, empirical orthogonal functions
+## we'll the "SST" dataset
+
+## it's in the R package of the book:
+
+data("SSTlandmask", package = "STRbook") 
+data("SSTlonlat", package = "STRbook") 
+data("SSTdata", package = "STRbook") 
+
+head(SSTlandmask)
+
+head(SSTlonlat)
+
+head(SSTdata)
+
+SSTdata[1:5,1:5]
+
+## use the landmask to get rid of values over land:
+delete_rows <- which(SSTlandmask == 1)
+## use this, and take only the first 396 months:
+SSTdata <- SSTdata[-delete_rows, 1:396]
+## don't we need to mask the XY coords, too? 
+SSTlonlat <- SSTlonlat[-delete_rows,]
+
+## needs to be space-wide
+
+## my allergies are kicking in...go to python
+write.csv(SSTdata, file = "/home/daniel/Documents/learn/spTemp/dataSets/ch2/SSTdata.csv")
+write.csv(SSTlonlat, file = "/home/daniel/Documents/learn/spTemp/dataSets/ch2/SSTlonlat.csv")
+
+## our data dir is 
+cd /home/daniel/Documents/learn/spTemp/dataSets/ch2
+
+## python
+python3
+import pandas as pd
+
+sst = pd.read_csv("/home/daniel/Documents/learn/spTemp/dataSets/ch2/SSTdata.csv", index_col=0)
+
+sstLonLat = pd.read_csv("/home/daniel/Documents/learn/spTemp/dataSets/ch2/SSTlonlat.csv", index_col=0)
+
+## some good websites...
+## two python packages for EOF:
+https://github.com/ajdawson/eofs
+https://github.com/zhonghua-zheng/pyEOF
+
+## tutorial without special packages:
+https://climate.usu.edu/people/yoshi/pyclm101/monthly.html#eof-analysis
+
+## let's try following the latter, 
+## then maybe try the packages 
+## with the book data?
+
+

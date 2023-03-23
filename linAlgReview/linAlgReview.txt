@@ -1,0 +1,120 @@
+## we have to start over a bit, remember eigen decomposition and 
+## learn about SVD, which we never did back in the day.
+
+## let's go through legendre's chapter on it, and try using sympy
+
+from sympy import *
+init_printing(use_unicode=True, wrap_line=False)
+
+M = Matrix([[1,0,0], [0,0,0]])
+
+M
+
+eye(4)
+
+
+M = Matrix( [[1,4],
+             [2,5],
+             [3,6]])
+
+N = Matrix( [[1,3,5],
+             [2,4,6]])
+
+M*N
+
+B = Matrix( [[1,0,2],
+             [3,1,1],
+             [1,2,1],
+             [-1,3,2]])
+
+C = Matrix( [[1,2],
+             [2,1],
+             [3,-1]])
+
+B*C
+
+1*(5*10 - 6*8) - 2*(4*10 - 6*7) - 3*(4*8 - 5*7)
+
+1*(5*10 - 6*8)
+
+5*10 
+
+B = Matrix( [[1,2,3],
+             [4,5,6],
+             [7,8,10]])
+
+B.det()
+
+C = Matrix( [[1,1,3],
+             [4,4,6],
+             [7,7,10]])
+
+C.det()
+
+B = Matrix( [[ 1, 1],
+             [-1, 0],
+             [ 3,-1]])
+
+
+C = Matrix( [[1,3,1],
+             [2,5,1]])
+
+C = Matrix( [[4,15,4],
+             [7,25,6]])
+
+
+## inverses
+
+
+B = Matrix( [[1,2,3],
+             [4,5,6],
+             [7,8,10]])
+
+B.det()
+
+B.cofactor(0,0)
+
+B.cofactor(2,2)
+
+B.cofactor_matrix()
+
+
+B*B1
+
+## following example here:
+## https://math.libretexts.org/Bookshelves/Linear_Algebra/A_First_Course_in_Linear_Algebra_(Kuttler)/07%3A_Spectral_Theory/7.01%3A_Eigenvalues_and_Eigenvectors_of_a_Matrix
+
+A = Matrix( [[0,5,-10],
+             [0,22,16],
+             [0,-9,-2]])
+
+X1 = Matrix( [5,-4,3])
+
+X2 = Matrix( [1,0,0])
+
+A*X1
+
+A*X2
+
+## some good reading here: 
+## https://towardsdatascience.com/understanding-singular-value-decomposition-and-its-application-in-data-science-388a54be95d
+
+## 
+
+
+C = Matrix( [[-1, 1],
+             [ 0,-2]])
+
+C.eigenvals()
+
+l1 = -2
+ev1 = Matrix([-1,1])
+
+l2 = -1
+ev2 = Matrix([0,1])
+
+C * ev1
+ev1 * l1
+
+
+C.eigenvects()
